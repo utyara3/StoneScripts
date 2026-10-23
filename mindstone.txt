@@ -1,56 +1,147 @@
 import Cosmetics/FireFly
 import Foes/FlowerFoes
-import Hats/StarCloak
+//import Hats/StarCloak
 
-//import utyara3/interface
+import UI/MindstoneButton
+import utyara3/interface
 import utyara3/Timer2
 import utyara3/stonehead
+import Cosmetics/AuroraBorealis
 
 var aac = import utyara3/AAC
 aac.AAC()
 
 var u = import utyara3/utils
-u.DisplayStopped()
-u.reload_listen()
-u.reload_display(30, 3)
-u.updateAll()
+var rel = import utyara3/reload/reload
+//var i = import utyara3/Interfaces/asterisk
 
+rel.sync_reload_pool()
+rel.display_pool_x = 30
+rel.display_pool_y = 3
+
+
+rel.need_display = true
+//rel.display_pool(30, 3, rainFF)
+
+/*
+var storageExt = import Sorgin/Ext/Storage
+var id = ＂sorgin.3.65.＂+loc.id+＂.＂+loc.stars
+storageExt.SetArray(id+＂.fst＂,［0, ［］, ［］］)
+storageExt.SetArray(id+＂.sec＂,［0, ［］, ［］］)
+storageExt.SetArray(id+＂.lst＂,［0, ［］, ［］］)
+*/
+ 
 disable hud ru
 
-?loc = deadwood
-  ?loc.stars = 15
-    import utyara3/Locations/ddwd/ddwd15
+var use_imports = true
+?use_imports
+  ?loc = rocky
+    ?loc.stars = 20
+      import utyara3/Locs/Rocky/Rocky20
+    :?loc.stars = 15
+      import utyara3/Locs/Rocky/Rocky15
 
-?loc = mush & totaltime = 10000
-  ?loc.stars = 15
-    import utyara3/Locations/Mush/Mush15
+  :?loc = deadwood
+    ?loc.stars = 15
+      import utyara3/Locs/ddwd/ddwd15
 
-?loc = halls
-  ?loc.stars = 15
-    import utyara3/Locations/Halls/Halls15
+  :?loc = caves
+    ?loc.stars = 15
+      import utyara3/Locs/Caves/Caves15
 
-?loc = ridge
-  ?loc.stars = 15
-    import utyara3/Locations/Ridge/Ridge15_2
+  :?loc = mush
+    ?loc.stars = 15
+      import utyara3/Locs/Mush/Mush15_2
 
-?loc = temple
-  ?loc.stars = 20
-    import utyara3/Locations/Temple/Temple20
+  :?loc = halls
+    ?loc.stars = 15
+      import utyara3/Locs/Halls/Halls15
 
-//>`0,@screen.h-1@,@buffs.string@
+  :?loc = mine
+    ?loc.stars = 20
+      import utyara3/Locs/Mines/Mines20
 
-?foe.distance > 16 | foe.distance > 10 &
-^!u.CanDashBash()
+  :?loc = ridge
+    ?loc.stars = 15
+      import utyara3/Locs/Ridge/Ridge15_2
+    :?loc.stars = 5
+      import utyara3/Locs/Ridge/Ridge5
+
+  :?loc = temple
+    ?loc.stars = 15
+      import utyara3/Locs/Temple/Temple15
+    :?loc.stars = 20
+      import utyara3/Locs/Temple/Temple20
+
+/*
+var burst = ［
+＂poison2＂,
+＂vigor1＂, ＂vigor2＂,
+＂aether1＂, ＂aether2＂,
+＂fire1＂, ＂fire2＂,
+＂icecrit1＂, ＂icecrit2＂
+］ 
+var nextweap 
+
+?foe.distance > 17
   u.QuarterUse()
-  equipR mask
-  equipL trisk
-:?foe.distance > 10
-  u.DashBash()
-:
-  ?item.potion ! empty
-    activate potion
-  ?foe.distance > 4 | math.Abs(pos.z-foe.z) > 0
-    u.smoothcast(［＂unmaker1＂, ＂unmaker2＂］)
+  ?rel.can_reload()
+    rel.oh_reload()
   :
-    equipR unmaker1
-    equipL unmaker2
+    u.maskound()
+:?foe.distance > 10
+  ?u.CanDashBash()
+    u.DashBash()
+  :
+    u.maskound()
+:
+  nextweap = rel.next_weapon(burst, 1)
+  equipR @nextweap［0］@
+  equipL moon
+*/
+/*
+func smooth(items)
+  ?player.moveAddX < 15
+ // ?item.left = trisk
+    ?items.Count() = 1
+      equip @items［0］@
+    :
+      equipR @items［0］@
+      equipL @items［1］@
+  :
+    equipR hatchet
+    equipL trisk
+
+?foe.distance > 22
+  ?screen.i = 4
+    ?player.MoveAddX < 15
+      equip shovel
+      equipR hatchet
+    :
+      equipR hatchet
+      equipL trisk
+  :
+    u.QuarterUse()
+    u.maskound()
+:?foe.distance > 10
+  ?item.CanActivate() & item.potion ! empty
+    activate potion
+  :
+   
+    u.QuarterUse()
+    u.maskound()
+:
+  ?foe.distance < 5
+    equip heavy hammer
+ // :?item.left = trisk & item.left.state = 2 &
+//  ^item.left.time > 0 
+  :
+    ?item.left = trisk
+      equipR aether wand shiny +21/21
+      equipL aether wand -shiny +21/21
+  //  u.smoothcast(［＂aether wand shiny +21/21＂,
+    //^＂aether wand -shiny +21/21＂］)
+    :
+      equipR hatchet
+      equipL trisk
+*/
