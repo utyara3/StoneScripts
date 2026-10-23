@@ -1,0 +1,37 @@
+var scrolls = []
+
+func ScrollText(x, y, text, color, window_size, interval, separator)
+  var scroll_id = -1
+
+  ?scrolls.Count() = 0
+    scrolls.Add([x, y, 0])
+    scroll_id = 0
+  :
+    for i = 0..scrolls.Count() - 1
+      ?scrolls[i][0] = x & scrolls[i][1] = y
+        scroll_id = i
+        break
+
+    ?scroll_id = -1
+      scrolls.Add([x, y, 0])
+      scroll_id = scrolls.Count() - 1
+
+  var full_text = text + separator
+  var text_len = string.Size(full_text)
+
+  ?text_len <= window_size
+    Display(x, y, color, text)
+    return
+
+  ?totaltime % interval = 0
+    scrolls[scroll_id][2] = (scrolls[scroll_id][2] + 1) % text_len
+
+  var start_pos = scrolls[scroll_id][2]
+  var tail_len = text_len - start_pos
+
+  ?tail_len >= window_size
+    Display(x, y, color, string.Sub(full_text, start_pos, window_size))
+  :
+    var head_len = window_size - tail_len
+    Display(x, y, color, string.Sub(full_text, start_pos, tail_len) + string.Sub(full_text, 0, head_len))
+

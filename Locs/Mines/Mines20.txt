@@ -1,0 +1,205 @@
+var u = import utyara3/utils
+var rel = import utyara3/reload/reload
+var kb = import utyara3/kb
+
+var BFG_SCREEN_NUMBER = 4
+var decide_kb
+decide_kb = kb.decideKBDash()
+kb.kb_immuned = false
+
+u.updateAll()
+?loc.begin
+  // brew stone + bronze
+  brew wood + bronze 
+?screen.i = BFG_SCREEN_NUMBER & u.loops % 2 = 0 & u.CanUse("blade")
+  u.BFG()
+:?u.loops = 0
+  ?totaltime < 3
+    equipR compound shield
+    equipL triskelion
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?summon.count = 1 & item.potion ! empty
+    activate potion
+  :?!ai.enabled | ai.paused
+    equipR mask
+    equipL triskelion
+  :?pickup.distance < 10
+    equipR mask
+    equipL star
+  :?foe = bronze
+    ?ai.paused
+      u.maskound()
+      equipL ouro
+    :?u.CanUse("heavy_hammer") & foe.debuffs.string ! "fatigue"
+      equip heavy_hammer +21/0
+      activate r
+    :?u.CanUse("mask")
+      equipR mask
+      equipL aether wand D +21/21
+      activate r
+    :?buffs.GetTime("berserk") > 5
+      equip aether crossbow +21/21
+    :
+      equipR mask
+      equipL aether wand D +21/21
+  :?foe.distance > 16 | foe.distance > 10 & !u.CanDashBash()
+    u.QuarterUse()
+    ?u.CanUse("lollipop_wand")
+      equipR lollipop_wand
+      equipL triskelion
+      activate r
+    :
+      equipR mask
+      ?foe.distance < 21 & player.MoveAddX < 15 & foe ! cart
+        //equipL aether wand +21/21 shiny
+        // equip aether crossbow +21/21
+        equip vigor crossbow +21/21
+      :
+        equipL triskelion
+  :?foe.distance > 10 & foe = cart
+    ?u.CanDashBash() & (foe ! cart | item.GetCooldown("mind") < 1)
+      u.DashBash()
+    :
+      ?foe.state = 32 | foe.state = 33
+        equipR tower shield +21
+      :
+        equipR mask
+      equipL trisk
+  :
+    ?foe ! boss
+      equipR mask
+      ?foe.distance < 21 & player.MoveAddX < 15
+        //equipL aether wand +21/21 shiny
+        equip aether crossbow +21/21
+      :
+        equipL triskelion
+    :
+      ?foe = cart & foe.distance < 5
+        equip mind
+      :
+        equip shovel
+:
+  ?item.right = "ice staff" & foe ! cart
+    u.maskound()
+  ?buffs.GetTime("berserk") < 1000 & item.potion ! empty
+    activate potion
+  ?(u.enduse > 31 & u.loops % 2 = 0 |
+  ^screen.i = 6 & u.loops % 2 = 1 & pos.x > 405) 
+  ^& u.loops ! 1 & u.CanUse("staff_fire") & armor*10+armor.f>60
+    equip staff_hidden_fire
+    activate r
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?summon.GetId() = "voidweaver" & screen.i = 6 & pickup.distance > 50
+  ^&u.loops % 2 = 1 & foe.distance > 50
+    equipR fire talisman
+    equipL trisk
+    activate r
+  :?pickup.distance < 10
+    equipR star
+    equipL triskelion
+  :?foe = bronze
+    ?foe.armor < 500 & u.loops % 2 = 1 & u.loops ! 1
+      activate cinderwisp
+    ?ai.paused
+      // ?u.infReduction()
+      //  return
+      // :
+      u.maskound()
+      equipL ouro
+    :?u.CanUse("heavy_hammer") & foe.debuffs.string ! "fatigue"
+      equip heavy_hammer +21/0
+      activate r
+    :?u.CanUse("mask")
+      equipR mask
+      activate r
+    :
+      equip aether crossbow +21/21
+  :?foe.distance < 24 & 
+  ^(encounter.eliteMod = "enfused" | encounter.eliteMod = "lucky" |
+  ^u.loops % 2 = 0 | u.loops = 1) & foe ! cart
+    ?player.MoveAddX < 15
+      // equip aether crossbow +21/21
+      equip vigor crossbow +21/21
+    :
+      u.maskound()
+
+  :?foe.distance > 17
+    u.QuarterUse()
+    ?u.CanUse("lollipop_wand")
+      equipR lollipop_wand
+      equipL triskelion
+      activate r
+    // :?screen.i = 1 & u.loops % 2 = 1 & loops ! 1 & 
+    // ^u.CanUse("wand_poison") &
+    // ^armor*10+armor.f > 60 & foe.distance < 23 
+    //   ?u.CanUse("wand_stone")
+    //     equipR wand_hidden_stone
+    //     activate r
+    //   :
+    //     equipR wand_hidden_poison
+    //     activate r
+    :?screen.i = 1 & u.CanUse("wand_stone") & foe.distance < 25
+      equipR wand_hidden_stone
+      equipL trisk
+      activate r
+    :?rel.can_reload()
+      rel.oh_reload()
+    :
+      ?foe.distance < 21 & u.loops % 2 = 1 & u.loops ! 1
+      ^& decide_kb ! "kb"
+        equipR aether wand dU +21/21
+        equipL trisk
+      :?foe.distance > 35
+        u.maskound()
+      :
+        u.RuneShield()
+  :?foe.distance > 10
+    ?u.CanDashBash() & (foe ! cart | u.CanUse("staff_stone"))
+      u.DashBash()
+    :?decide_kb = "kb" & foe.count < 3 & screen.i < 6
+      ?foe.hp + foe.armor > 444 * 4
+        u.smoothcast(["aether crossbow +21/21"])
+      :
+        rel.kb()
+    :?rel.can_reload()
+      rel.oh_reload()
+    :
+      u.RuneShield()
+  :
+    ?foe = monarch
+      u.smoothcast(["aether crossbow +21/21"])
+    :?foe ! boss
+      // ?screen.i = 1 & u.loops % 2 = 1 & u.loops ! 1 &
+      // ^u.CanUse("voidweaver")
+      //   activate voidweaver
+      ?math.Abs(pos.z - foe.z) > 2 & u.CanUse("wand_stone") 
+        equipR mask
+        equipL wand_hidden_stone
+        activate l
+      // :?screen.i = 1 & u.CanUse("heavy_hammer") & u.loops % 2 = 1
+      //   equip heavy_hammer
+      //   activate r
+      :?decide_kb = "kb" & foe.count < 3 & (screen.i < 6 | u.CanDashBash())
+        rel.kb()
+      :?foe.distance > 7
+        u.smoothcast(["aether wand dU +21/21 shiny", "aether wand dU +21/21 -shiny"])
+      :?foe.distance > 4
+        u.smoothcast(["unmaker1", "unmaker2"])
+      :
+        equipR unmaker1
+        equipL unmaker2
+    :
+      ?foe = cart
+        ?foe.distance < 5
+          equip mind
+        :
+          u.smoothcast(["shovel"])
+      :
+        u.maskound()
+

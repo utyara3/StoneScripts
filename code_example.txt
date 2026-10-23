@@ -1,0 +1,72 @@
+var u = import utyara3/utils // importing utils file
+
+u.updateAll() // update needed variables, use this !once!
+
+?loc.begin
+  brew wood + broze // brew the potion
+
+// use two screens blade
+?screen.i = BFG_SCREEN_NUMBER & u.loops % 2 = 0 & u.CanUse("blade")
+  u.BFG()
+:?u.loops = 0 // first permapot run
+  ?totaltime < 3
+    // have an full armor at the start
+    equipR compound
+    equipL trisk
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0 
+    // summon right after quarterstaff, let him start to recharge earlier
+    equipL aether talisman
+    equipR mask
+    activate L
+  :?foe.distance > 16 | foe.distance > 10 & !u.CanDashBash()
+    // far away or in dash distance but you can't dash because of cd
+    u.QuarterUse()
+    equipR mask
+    equipL trisk
+  :?foe.distance > 10
+    // you can dash bc your shield arent in cd and its dash range distance
+    u.DashBash()
+  :
+    ?foe ! boss
+      equipR mask
+      equipL any weapon
+    :
+      boss fight
+:
+  ?u.enduse > frames & u.loops % 2 = 0
+    // use staff or whatever at the end of the run
+    ?u.CanUse("staff_fire") & armor*10+armor.f>60
+      equip staff_hidden_fire
+      activate r
+  :?some other needed things
+    ...
+  :?pickup.distance < 10
+    equipR star
+    equipL trisk
+  :?foe.distance > 16
+    u.QuarterUse()
+    // some logic
+    ?foe.distance > 25
+      u.maskound() // use compound shield and mask
+    :
+      u.RuneShield() // rune shield
+  :?foe.distance > 10
+    ?u.CanDashBash()
+      u.DashBash()
+    :?some logic..
+      ...
+    :
+      u.RuneShield()
+
+  :
+    ?foe ! boss
+      ?foe.distance > 7
+        u.smoothcast(["shovel"]) // smoothcast some weapon to reach the enemy faster
+      :?foe.distance > 4
+        u.smoothcast(main attack weapons)
+      :
+        equip main attack weapons
+    :
+      kill the boss
+
+

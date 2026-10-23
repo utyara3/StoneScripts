@@ -1,0 +1,218 @@
+func Display(x, y, color, text)
+  >`@x@,@y@,#@color@,@text@
+
+
+var pool = []
+
+var need_display = true
+var display_pool_x = 0
+var display_pool_y = 0
+
+func smoothcast(items)
+  ?item.left ! trisk | item.right ! trisk
+    equipR hatchet
+    equipL trisk
+    return
+
+  ?items.Count() = 1
+    equip @items[0]@
+  :
+    equipL @items[0]@
+    equipR @items[1]@
+
+var components
+func matches_criteria(weap, short)
+  components = string.Split(short, true)
+  for c : components
+    ?string.Sub(c, 0, 1) = ＂-＂
+      ?weap = string.Sub(c, 1)
+        return false
+    :
+      ?weap ! c
+        return false
+
+  return true
+
+var all_runes = [
+"Stone", "Poison", "Vigor",
+"Aether", "Fire", "Ice"
+]
+var all_items = [
+"Sword", "Crossbow", "Wand",
+"Staff", "Shield", "Bardiche", 
+"Hammer", "Quarterstaff", "Runestone"
+]
+var all_stars = [
+"*1*", "*2*", "*3*", "*4*", "*5*",
+"*6*", "*7*", "*8*", "*9*", "*10*"
+]
+func format_item_name(item_)
+  var parts = string.Split(item_, " ")
+  
+  var item_rune = ""
+  var item_prefix = ""
+  var item_type = ""
+  var item_star = ""
+  var item_enchant = ""
+  
+  for part : parts
+    ?item_type & item_rune
+      break
+
+    ?all_runes.Contains(part)
+      item_rune = part
+      continue
+
+    ?all_items.Contains(part)
+      item_type = part
+      continue
+
+  ?item_ = "max"
+    item_star = "*10*"
+  :
+    item_star = "*" + string.Split(item_, "*") + "*"
+
+  item_enchant = "+" + string.Split(item_, "+")[1]
+
+  var output_string = ""
+  ?item_rune
+    output_string += item_rune + " "
+  ?item_type
+    output_string += item_type + " "
+  output_string += item_star + " "
+  output_string += item_enchant + " "
+
+  return output_string
+
+
+var two_handed_items = ["heavy_hammer", "socketed_crossbow"]
+func is_item_twohanded(item_)
+  for two_handed_item : two_handed_items
+    ?item_ = two_handed_item
+      return true
+
+  return false
+  
+  
+var blacklist = [
+"staff", "bardiche", "talisman",
+"skeleton_arm", "quarterstaff", 
+"trisk", "blade"
+]
+func is_allowed(item)
+  for banned : blacklist
+    ?item = banned
+      return false
+  return true
+
+func item_pool_process(item_pool_index, cur_item, cur_item_state)
+  ?item_pool_index ! -1
+    ?cur_item_state ! 4
+      pool.RemoveAt(item_pool_index)
+  :
+    ?cur_item_state = 3
+      ?is_allowed(cur_item)
+        pool.Add(cur_item)
+  
+func sync_reload_pool()
+  ?loc.begin | loc.loop
+    pool.Clear()
+
+  var right_item_pool_index = pool.IndexOf(item.right)
+  item_pool_process(right_item_pool_index, item.right, item.right.state)
+  
+  var left_item_pool_index = pool.IndexOf(item.left)
+  item_pool_process(left_item_pool_index, item.left, item.left.state)
+
+
+func oh_reload()
+  ?need_display
+    display_pool(display_pool_x, display_pool_y, white)
+
+  ?is_item_twohanded(pool[0])
+    equip @pool[0]@
+  :
+    equipL trisk
+    equipR @pool[0]@
+
+func th_reload()
+  ?need_display
+    display_pool(display_pool_x, display_pool_y, white)
+
+  var count = pool.Count()
+  ?count = 0
+    return
+
+  var item1 = pool[0]
+  
+  ?is_item_twohanded(item1)
+    equip @item1@
+    return
+
+  ?count > 1
+    var item2 = pool[1]
+    
+    ?is_item_twohanded(item2)
+      equip @item2@
+      return
+    :
+      equipR @item1@
+      equipL @item2@
+      return
+  :
+    equipR @item1@
+    equipL trisk
+    return
+
+func can_reload()
+  return pool.Count() > 0
+
+func need_reload(weapon)
+  for item : pool
+    ?matches_criteria(item, weapon)
+      return true
+
+  return false
+
+func display_pool(x, y, color)
+  var reload_string = "reloading...\n"
+  
+  for item : pool
+    item = format_item_name(item)
+    reload_string += item + "\n"
+
+  Display(x, y, color, reload_string)
+
+var ret_list = []
+func next_weapon(weapons_list, num)
+  ret_list.Clear()
+  var weaps_count = weapons_list.Count()
+
+  for weapon_idx = 0..weaps_count-1
+    var ret_count = ret_list.Count()
+    ?ret_count = num
+      break
+    
+    var cur_weap = weapons_list[weapon_idx]
+    var weap_need_reload = need_reload(cur_weap)
+
+    ?is_item_twohanded(cur_weap) & !weap_need_reload
+      return [cur_weap]
+  
+    var is_fallback = (ret_count + (weaps_count - weapon_idx)) <= num
+  
+    ?!weap_need_reload | num + weapon_idx >= weaps_count
+      ret_list.Add(cur_weap)
+
+  return ret_list
+
+
+func burst(items)
+  var next_weaps = next_weapon(items, 2)
+  ?next_weaps.Count() > 1
+    equipR @next_weaps[0]@
+    equipL @next_weaps[1]@
+  :
+    equip @next_weaps[0]@
+
+    

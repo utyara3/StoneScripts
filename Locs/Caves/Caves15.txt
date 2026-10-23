@@ -1,0 +1,192 @@
+/*
+
+BOLESH HP = 8200
+BAT HP = 2500
+
+BARD CRIT = 168*13.5 = 2268 (2241 under 2 debuffs)
+
+BOLESH NEEDS 4 CRITS OR 3 CRITS AND SOME DAMAGE,
+WHILE BAT TAKING ONLY NO CRITS DAMAGE
+
+2914
+
+BARD BERSERKER CRIT = 168*1.3*13.5 = 218*13.5 = 2948
+
+BOLESH NEEDS 3 CRITS OR 2 CRITS AND NIHUEVO DAMAGE
+
+
+/home/utyara3/Videos/ScreenRecord/2026-08-23 17-05-16.mp4 
+04:58:41 29s 22f
+*/
+
+
+var u = import utyara3/utils
+var rel = import utyara3/reload/reload
+var kb = import utyara3/kb
+
+
+var BFG_SCREEN_NUMBER = 4
+var decide_kb
+decide_kb = kb.decideKBDash()
+kb.kb_immuned = false
+
+u.updateAll()
+?loc.begin
+  // brew stone + bronze
+  brew wood + bronze 
+?screen.i = BFG_SCREEN_NUMBER & u.loops % 2 = 0 & u.CanUse("blade")
+  u.BFG()
+:?u.loops = 0
+  ?totaltime < 3
+    equipR compound shield
+    equipL triskelion
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?summon.count = 1 & item.potion ! empty
+    activate potion
+  :?!ai.enabled | ai.paused
+    equipR mask
+    equipL triskelion
+  :?pickup.distance < 10
+    equipR mask
+    equipL star
+  :?foe = bolesh & ai.enabled & !ai.paused
+    equip ice crossbow +21/21
+  :?foe.distance > 16 | foe.distance > 10 & !u.CanDashBash()
+    u.QuarterUse()
+    ?u.CanUse("lollipop_wand")
+      equipR lollipop_wand
+      equipL triskelion
+      activate r
+    :
+      equipR mask
+      equipL triskelion
+  :?foe.distance > 10
+    u.DashBash()
+  :
+    ?foe ! boss
+      equipR mask
+      equipL unmaker1
+    :
+      equip ice crossbow +21/21
+:
+  ?buffs.GetTime("berserk") < 1000 & item.potion ! empty
+    activate potion
+  ?(u.enduse > 31 & u.loops % 2 = 0 | 
+  ^buffs.string ! "infernal" & u.loops % 2 = 1 &
+  ^screen.i < 4)
+  ^& u.CanUse("staff_fire") & armor*10+armor.f > 60
+    equip staff_hidden_fire
+    activate r
+  :?u.enduse > 28 & u.CanUse("staff_vigor")
+  ^& armor*10+armor.f > 40
+    equip staff_hidden_vigor
+    activate r
+  :?debuffs.string = darkness_move &
+  ^buffs.string = prevention &
+  ^screen.i = 0
+    ?item.right ! ＂torch＂
+      equipR torch
+    :
+      equipR compound
+    equipL trisk
+  :?pickup.distance < 10
+    equipR star
+    equipL triskelion
+  :?foe = bolesh 
+    ?ai.enabled & !ai.paused
+      equip ice crossbow +21/21
+    :
+      equipR tower
+      equipL quest
+  :?foe = decorator & u.loops % 2 = 1 
+    ?foe.distance + pos.x < 529
+      ?foe.distance > 16
+        u.QuarterUse()
+        ?foe.distance > 20 | buffs.string ! bullet
+          u.maskound()
+        :
+          u.smoothcast(["shovel"])
+      :?u.CanDashBash() & foe.distance > 10 & pos.x < 500
+        u.DashBash()
+      :
+        ?u.CanUse("staff_aether") & armor*10+armor.f > 20
+          equip staff_hidden_aether
+          activate r 
+        :  
+          // rel.kb()
+          equip stone socketed_crossbow +21/18 shiny
+    :
+      ?foe.distance > 16 
+        u.smoothcast(["shovel"])
+      :?foe.distance > 10 
+        u.DashBash()
+      :
+        equip dmgbardiche
+
+  :?foe.distance > 17
+    u.QuarterUse()
+    ?u.CanUse("lollipop_wand")
+      equipR lollipop_wand
+      equipL triskelion
+      activate r
+    :?rel.can_reload()
+      rel.oh_reload()
+    :
+      ?foe.distance > 35 | foe = boss
+        u.maskound()
+      :?foe.state = 2 & u.loops % 2 = 1 & foe ! boss
+        equipR ice shield ai shiny
+        equipL trisk
+      :
+        u.RuneShield()
+  :?foe.distance > 10
+    ?screen.i = 2 & u.CanDashBash()
+      ?u.CanDash()
+        u.Dash()
+      :
+        u.Bash()
+    :?u.CanDashBash()
+      u.DashBash()
+    :?decide_kb = "kb"
+      rel.kb()
+    :?rel.can_reload()
+      rel.oh_reload()
+    :
+      u.RuneShield()
+  :
+    ?screen.i = 2 & u.CanUse("heavy_hammer")
+      equip heavy hammer 
+      activate r
+    :?foe ! boss
+      ?decide_kb = "kb" & screen.i < 6 & foe.distance > 3
+        rel.kb()
+      :?foe.distance > 6
+        u.smoothcast(["shovel"])
+      :?decide_kb = "kill_splash" & (foe.distance > 4 | item.right = "bardiche")
+        equip apsbardiche
+      :
+        var rweap = "unmaker1"
+        var lweap = "unmaker2"
+        
+        ?u.loops % 2 = 1 & buffs.string = "smite"
+          /*
+          var alter = rel.alternate("bigicesword1", "bigicesword2", "moon")
+          rweap = alter[0]
+          lweap = alter[1]
+          */
+          rweap = "bigicesword1"
+          lweap = "bigicesword2"
+        :
+          rweap = "unmaker1"
+          lweap = "unmaker2"
+
+        ?foe.distance > 4
+          u.smoothcast([rweap, lweap])
+        :
+          equipR @rweap@
+          equipL @lweap@
+    :
+      equip ice crossbow

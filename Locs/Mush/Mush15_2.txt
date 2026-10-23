@@ -1,0 +1,371 @@
+/*
+FEATURES
+
+NO POTBUG INFERNAL
+?((u.enduse > 30 & u.loops % 2 = 0) | 
+^(screen.i = INFERNAL_SCREEN_NUMBER & loops % 2 = 1)) & 
+^u.CanUse("staff_fire") & armor*10+armor.f > 80
+  equip staff_hidden_fire
+  activate r
+
+TALISMAN SWAP
+?item.GetCooldown("voidweaver") > 0 & summon.GetId() ! "cinderwisp" & 
+  ^(pickup.distance > 20 | item.right = fire talisman)
+  equipR fire talisman
+  equipL triskelion
+  activate r
+*/
+
+/*
+DUMMY KILL
+
+used weapons:
+12 ice wands dI +21/21
+2 fire wands dF +21/21
+2 poison wands dP +21/21
+dmgbardiche +21/21
+heavy_hammer +21/21
+mask
+reset_wand
+
+sequence:
+
+1st phase:
+  ?foe.armor > 2000
+    hammer1
+    hammer2
+  
+  ?foe.armor > 1000
+    hammer1
+    moon
+  
+  berserker_staff
+  
+  ?foe.armor > 400
+    bigicesword1
+    bigicesword2
+
+  double backward dash
+  
+  6 ice wands shoots -> (80+155)*6 = 1410
+  2 fire wands shoots -> (80+155)*2 = 470
+  2 poison wands shoots -> (80+155)*2 = 470
+  6 ice wands shoots -> (80+155)*6 = 1410
+  3 poison crossbow shoots -> 444*3 = 1332
+  qstaff, dash
+  kill 1st phase
+dummy: 
+  heavy_hammer = 145
+  reset_wand
+  bardiche = 2498
+  mask = (10+155)*6 = 990
+  (1410*2 + 470 * 2 + 888 + (145 + 155) + 2498 + 990)*1.3 = 7838*1.3 = 10_189
+2nd phase:
+  crossbow shoots
+
+note: may not correspond to reality
+*/
+
+var u = import utyara3/utils
+var rel = import utyara3/reload/reload
+var kb = import utyara3/kb
+
+var BFG_SCREEN_NUMBER = 3
+var decide_kb
+decide_kb = kb.decideKBDash()
+kb.kb_immuned = false
+
+u.Display(23, 7, white, decide_kb)
+
+var p1kf = false
+var p2kf = false
+?foe = phase1 & foe.hp < 1
+  p1kf = true
+?foe = phase2 & foe.hp < 1
+  p2kf = true
+
+?loc.loop
+  p1kf = false
+  p2kf = false
+  vigor_delay = 1
+
+var sequence 
+sequence = [
+  "firewand1", "poisonwand1",
+  "icewand1", "icewand2", "icewand3",
+  "icewand4", "icewand5", "icewand6",
+  "firewand2", "poisonwand2",
+  "icewand7", "icewand8", "icewand9",
+  "icewand10", "icewand11", "icewand12",
+  "poisoncrossbow1", 
+  "poisoncrossbow2",
+  //"poisoncrossbow3"
+]
+
+//u.Display(30, 15, white, sequence[sequence.Count()-1])
+
+var vigor_delay = 1
+
+u.updateAll()
+?loc.begin
+  // brew stone + bronze
+  brew wood + bronze 
+?screen.i = BFG_SCREEN_NUMBER & u.loops % 2 = 0 & u.CanUse("blade")
+  u.BFG()
+:?u.loops = 0
+  ?totaltime < 3
+    equipR compound shield
+    equipL triskelion
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?summon.count = 1 & item.potion ! empty & buffs.GetTime("berserk") < 100
+    activate potion
+  :?!ai.enabled | ai.paused
+    equipR mask
+    equipL triskelion
+  :?foe = phase
+    equip poison crossbow
+  :?pickup.distance < 10
+    equipR mask
+    equipL star
+  :?foe.distance > 16 | foe.distance > 10 & !u.CanDashBash()
+    u.QuarterUse()
+    ?u.CanUse("lollipop_wand")
+      equipR lollipop_wand
+      equipL triskelion
+      activate r
+    :
+      equipR mask
+      equipL triskelion
+  :?foe.distance > 10
+    u.DashBash()
+  :
+    ?foe ! boss
+      equipR mask
+      equipL unmaker1
+    :
+      ?foe = puff
+        ?foe.distance > 4
+          u.smoothcast(["shovel"])
+        :
+          equipR mask
+          equipL mind
+      :
+        equip poison crossbow
+: 
+  ?buffs.GetTime("berserk") < 300 & item.potion ! empty
+    activate potion
+  ?(u.enduse > 32 & u.loops % 2 = 0 | pos.x >= 431 & u.loops % 2 = 1)
+  ^& u.CanUse("staff_fire") & armor*10+armor.f > 60
+    equip staff_hidden_fire
+    activate r
+  :?summon.count = 0 & screen.i = 6 & 
+  ^(foe.distance > 16 | item.right = talisman) & u.loops % 2 = 1
+    equipR fire talisman
+    equipL triskelion
+    activate r
+  :?pickup.distance <= 7
+    equipR trisk
+    equipL star
+  :?p1kf & u.CanUse("mask") & u.loops % 2 = 1 & foe ! phase2 & !p2kf
+    /*
+    ?u.CanUse("staff_aether")
+      equip staff_hidden_aether
+      activate r
+    */
+    ?u.CanUse("wand_poison") & armor*10+armor.f > 60
+      equipR wand_hidden_poison
+      activate r
+    :?u.CanUse("heavy_hammer")
+      equip heavy_hammer
+      activate r
+    :?u.CanUse("wand_vigor") & armor > 1
+      ?vigor_delay < 1
+        equipR wand_hidden_vigor
+        activate r
+      vigor_delay--
+    :?u.CanUse("bardiche")
+      equip bardiche
+      activate r
+    :
+      equipR mask
+      activate r
+  :?u.loops % 2 = 1 & item.GetCooldown("mind") > 0 & foe ! phase2 & !p2kf
+    ?u.CanUse("staff_stone")
+      equip staff_hidden_stone
+      activate r
+    :?foe.distance > 21
+      ?rel.can_reload()
+        rel.oh_reload()
+      :
+        u.maskound()
+    :
+      var last_seq_in_cd
+      var next_weapon
+
+      last_seq_in_cd = rel.need_reload(sequence[sequence.Count()-1])
+      ?!last_seq_in_cd
+        next_weapon = rel.next_weapon(sequence, 2)
+        ?next_weapon.Count() = 1
+          equip @next_weapon[0]@
+        :
+          equipR @next_weapon[0]@
+          equipL @next_weapon[1]@
+      :?foe.distance > 10
+        u.QuarterUse()
+        u.DashBash()
+      :
+        ?foe = phase1 & foe.hp > 0
+          equipR bigicesword1
+          equipL bigicesword2
+
+  :?foe.distance > 17
+    ?foe = phase1 & u.loops % 2 = 1
+      ?foe.distance <= 21
+        var third_in_cd
+        var next_weapon
+        third_in_cd = rel.need_reload(sequence[2])
+
+        ?!third_in_cd
+          ?u.CanUse("staff_poison")
+            equip staff_hidden_poison
+            activate r
+          :
+            next_weapon = rel.next_weapon(sequence, 1)
+            equipR @next_weapon[0]@
+            equipL trisk
+        :
+          u.maskound()
+      :
+        u.maskound()
+    :
+      u.QuarterUse()
+      ?u.CanUse("lollipop_wand")
+        equipR lollipop_wand
+        equipL triskelion
+        activate r
+      :?rel.can_reload()
+        rel.oh_reload()
+      :
+      /*
+        ?u.loops % 2 = 1 & screen.i = 1 & foe.state = 2 
+          equipR ice shield ai shiny
+          equipL trisk
+        */
+        ?foe.distance > 30 | foe = boss
+          u.maskound()
+        :
+          u.RuneShield()
+  :?foe.distance > 10
+    ?screen.i = 1 & u.CanDashBash()
+      ?u.CanDash()
+        u.Dash()
+      :
+        u.Bash()
+    :?u.loops % 2 = 0 & u.CanDash()
+      u.Dash()
+    :?u.CanDashBash() & u.loops % 2 = 1
+      u.DashBash()
+    :?decide_kb = "kb"
+      rel.kb()
+    :?rel.can_reload()
+      rel.oh_reload()
+    :
+      u.RuneShield()
+  :
+    ?foe ! boss
+    
+      ?screen.i = 1 & u.loops % 2 = 1 & u.CanUse("heavy_hammer")
+        equip heavy_hammer
+        activate r
+
+      /*
+      :?screen.i <= 3 & u.CanDashBash() & foe.distance = 6 & 
+      ^u.CanUse("staff_stone") & u.loops % 2 = 1
+        equip staff_hidden_stone
+        activate r
+      */
+      :?decide_kb = "kb"
+        rel.kb()
+        /*
+      :?foe.distance > 4 & foe = ant & foe ! spawner & (item.right ! trisk | (item.right.state = 2 & item.right.time < 16))
+        equipR trisk
+        equipL poison hammer +21/21 shiny
+      */
+      // :?foe.distance > 7
+      //  u.smoothcast(["shovel"])
+      :?u.loops % 2 = 0 | buffs.GetCount("smite") < 40 // | screen.i > 3
+        ?foe.distance > 4
+          u.smoothcast(["unmaker1", "unmaker2"])
+        :
+          equipR unmaker1
+          equipL unmaker2
+      
+      :?foe.distance > 4
+        u.smoothcast(["bigicesword1", "bigicesword2"])
+      //:?decide_kb = "kill_splash"
+      :?foe.GetCount(20) > 2
+        equip apsbardiche
+      :
+        rel.alternate("bigicesword1", "bigicesword2", "moon")
+    :
+      ?foe = snail
+      /*
+        ?u.loops % 2 = 1
+          var next_weapon
+          next_weapon = rel.next_weapon(sequence, 2)
+
+          equipR @next_weapon[0]@
+          equipL @next_weapon[1]@
+        :
+      */
+        ?foe.distance > 4
+          u.smoothcast(["poison crossbow"])
+        :
+          equip poison crossbow
+      /*
+        ?foe.distance > 4
+          rel.kb()
+        :
+          equip stone socketed_crossbow +21/18 shiny
+      */
+      :?foe = puff
+        ?foe.distance > 4
+          u.smoothcast(["shovel"])
+        :?u.loops % 2 = 1
+          equipR fire talisman
+          equipL star
+        :
+          equipR mask
+          equipL mind
+      :?u.loops % 2 = 0
+        equip poison crossbow
+      :
+        ?foe.armor > 2000
+          equipR poison hammer +21/21 shiny
+          equipL poison hammer +21/21 -shiny
+        /*
+        :?foe.armor > 1000
+          equipR poison hammer +21/21 shiny
+          equipL moon
+        */
+        :?u.CanUse("staff_poison") & armor*10+armor.f > 80
+          equip staff_hidden_poison
+          activate r
+        /*
+        :?foe.armor > 400
+          equipR bigicesword1
+          equipL bigicesword2
+        */
+        :?u.CanUse("mind")
+          equipR trisk
+          equipL mind
+        :?player.direction ! 1
+          u.maskound()
+        :
+          equip poison crossbow
+
+
+

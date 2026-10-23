@@ -1,0 +1,36 @@
+var u = import utyara3/utils
+var kb = import utyara3/kb
+var rel = import utyara3/reload/reload
+
+var decide_kb 
+decide_kb = kb.decideKBDash()
+u.Display(20,10,white,decide_kb)
+
+?loc.begin
+  brew wood + bronze
+
+?totaltime < 3
+  equipR compound
+  equipL trisk
+:?foe.distance > 16
+  u.QuarterUse()
+  equipR mask
+  equipL trisk
+:?foe.distance > 10
+  ?u.CanDashBash()
+    u.DashBash()
+  :?decide_kb = "kb"
+    rel.kb()
+  :
+    equipR mask
+    equipL trisk
+:
+  ?item.potion ! empty
+    activate potion
+  ?decide_kb = "kb"
+    rel.kb()
+  :?foe.distance > 7
+    u.smoothcast(["shovel"])
+  :
+    equipR unmaker1
+    equipL unmaker2

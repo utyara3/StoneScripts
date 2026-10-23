@@ -1,0 +1,32 @@
+/*
+?bighead
+  var scarf = import Cosmetics/WavyScarf
+  scarf.scarfColor = #red
+  scarf.ScarfMain()
+
+ // >h0,-1,#05780b,λ
+  >h-2,0,#eb8510,｛｛  ｝
+  >h0,0,#FFFF00,▶◀
+  >h1,1,#eb8510,´
+*/
+/*
+disable player
+var helmet = ascii
+#_
+L†
+asciiend
+
+var compound = ascii
+#_,
+#]|
+#`'
+asciiend
+
+>h0,0,#white,@helmet@
+
+>h0,0,#red,&
+*/
+/*
+?item.right = "compound"
+  >h1,1,#white,@compound@
+*/

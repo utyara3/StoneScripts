@@ -1,0 +1,74 @@
+var kb_immuned = true
+
+func binSearchEnemy(min, max, foe_cnt)
+  ?min = max
+    return min
+  var mid = (min + max) / 2
+  ?foe.GetCount(mid) < foe_cnt
+    return binSearchEnemy(mid + 1, max, foe_cnt)
+  :
+    return binSearchEnemy(min, mid, foe_cnt)
+
+func getFoeDistance(foe_cnt)
+  ?foe.GetCount(42) < foe_cnt
+    return -1
+  :
+    return binSearchEnemy(0, 42, foe_cnt)
+
+func canReachWhileCooldown(enemy_dist, cooldown_frames)
+  var speed_per_frame = player.moveX / 30.0
+  var distance_can_run = speed_per_frame * cooldown_frames
+  return enemy_dist <= distance_can_run
+
+func getAllEnemyDistances()
+  var distances = []
+  var count = foe.GetCount(42)
+  for i = 1..count
+    var dist = getFoeDistance(i)
+    ?dist > 0
+      distances.Add(dist)
+  return distances
+
+func decideKBDash()
+  var distances = getAllEnemyDistances()
+  var count = distances.Count()
+
+  
+  ?count = 0
+    return "no_enemies"
+
+  ?foe = "immune_to_physical" | foe = "immune_to_ranged" | foe = "spawner"
+    ?!kb_immuned | foe.distance < 5 | count = 1
+      return "kill"
+  
+  /*
+  ?player.moveAddX >= 15
+    return "no_kb"
+  */
+
+  var dash_cd = item.GetCooldown("dash")
+  var bash_cd = item.GetCooldown("bash")
+
+  var min_dash_time = math.Min(dash_cd, bash_cd)
+  
+  var closest = distances[0]
+  var farthest = distances[count-1]
+
+  ?foe.hp + foe.armor < min_dash_time // 4 * 2
+    return "kill"
+  
+  ?min_dash_time < 1 & closest > 5
+    return "kb"
+
+  ?count > 3 
+    ?farthest > 10 & foe.GetCount(8) > 1
+      return "kill_splash"
+    return "kb"
+
+  return "kb"
+
+  ?count = 1
+    return "kb"
+
+  return "unknown"
+

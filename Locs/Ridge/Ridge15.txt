@@ -1,0 +1,298 @@
+/*
+FEATURES
+
+NO POTBUG INFERNAL
+?((u.enduse > 30 & u.loops % 2 = 0) | 
+^(screen.i = INFERNAL_SCREEN_NUMBER & loops % 2 = 1)) & 
+^u.CanUse("staff_fire") & armor*10+armor.f > 80
+  equip staff_hidden_fire
+  activate r
+
+TALISMAN SWAP
+?item.GetCooldown("voidweaver") > 0 & summon.GetId() ! "cinderwisp" & 
+  ^(pickup.distance > 20 | item.right = fire talisman)
+  equipR fire talisman
+  equipL triskelion
+  activate r
+*/
+
+/*
+
+boss: 400 armor + 5700hp = 6100
+bardiche - 2498
+
+563 по 595 = 32 кадра
+615 по 650 = 35 кадров
+*/
+
+
+
+var u = import utyara3/utils
+
+var BFG_SCREEN_NUMBER = 2
+var HAMMER = "fire hammer"
+
+var weaps = [
+  "bigicesword1",
+  "bigicesword2",
+]
+var nextweap
+
+var shoots = 17
+
+func is_bigiceswords_not_in_kd()
+  return !r.need_reload("bigicesword1") | !r.need_reload("bigicesword2")
+
+
+u.updateAll()
+r.updateAll()
+?loc.loop
+  shoots = 17
+?loc.begin
+  // brew stone + bronze
+  brew wood + bronze 
+?screen.i = BFG_SCREEN_NUMBER & u.loops % 2 = 0 & u.CanUse("blade")
+  u.BFG()
+:?u.loops = 0
+  ?totaltime < 3
+    equipR compound shield
+    equipL triskelion
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?summon.count = 1 & item.potion ! empty
+    activate potion
+  :?foe = yeti
+    ?!ai.enabled & ai.paused
+      equipR mask
+      equipL triskelion
+    :?foe.distance > 10
+      u.DashBash()
+    :?foe.armor > 0
+      u.moonjuggling("fire sword +21/21 shiny", "fire sword +21/21 -shiny")
+    :?u.CanUse("heavy_hammer")
+      equip heavy hammer
+      activate r
+    :?u.CanUse("bardiche")
+      equip bardiche
+      activate r
+    :?u.CanUse("mask")
+      equipR mask
+      activate r
+    :
+      //u.moonjuggling("fire sword +21/21 shiny", "fire sword +21/21 -shiny")
+      equip fire crossbow
+  :?!ai.enabled | ai.paused
+    equipR mask
+    equipL triskelion
+  :?pickup.distance < 10
+    equipR mask
+    equipL star
+  :?foe.distance > 16 | foe.distance > 10 & !u.CanDashBash()
+    u.QuarterUse()
+    ?u.CanUse("lollipop_wand")
+      equipR lollipop_wand
+      equipL triskelion
+      activate r
+    :
+      equipR mask
+      ?item.right = triskelion
+        equipL @HAMMER@
+      :
+        equipL triskelion
+  :?foe.distance > 10
+    u.DashBash()
+  :
+    ?foe ! boss
+      equipR mask
+      equipL unmaker1
+    :
+      ?foe = yeti & foe.armor < 1 & u.CanUse("bardiche")
+        equip dmgbardiche
+        activate r
+      :
+        u.moonjuggling("fire sword +21/21 shiny", "fire sword +21/21 -shiny")
+:
+  ?u.enduse > 30 & u.loops % 2 = 0 & u.CanUse("staff_fire")
+    equip staff_hidden_fire
+    activate r
+  :?screen.i = 5 & u.loops % 2 = 1 &
+  ^u.CanUse("staff_fire") & armor*10+armor.f>60
+    u.useInfernalPot()
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?pickup.distance < 10
+    equipR star
+    equipL triskelion
+  /*
+  :?foe = yeti & item.GetCooldown("mask") < 1
+    ?shoots > 0
+      ?shoots > 1
+        ?shoots > 5
+          equipR icewand1
+          equipL icewand2
+        :?shoots > 3
+          equipR icewand3
+          equipL icewand4
+        :
+          equipR icewand5
+          equipL icewand6
+        shoots -= 2
+      :
+        equip fire staff +21/11
+        shoots--
+    :?foe.distance > 10
+      u.DashBash()
+    ?armor > 0
+      u.moonjuggling("fire sword +21/21 shiny", "fire sword +21/21 -shiny")
+    :
+      :?u.CanUse("bardiche")
+        equip dmgbardiche
+        activate r
+        /*
+      :?u.CanUse("heavy_hammer")
+        equip heavy hammer
+        activate r
+      */
+      /*
+      :
+        equipR mask
+        activate r
+      */
+  :?foe = yeti
+    ?!item.CanActivate()
+      ?r.can_reload()
+        r.reload_all()
+      :
+        u.maskound()
+    :?u.CanUse("staff_poison")
+      equip staff_hidden_poison
+      activate r
+    :?shoots > 0
+      ?shoots > 1
+        ?shoots > 15
+          equipR poisonwand1
+          equipL firewand1
+        :?shoots > 13
+          equipR icewand1
+          equipL icewand2
+        :?shoots > 11
+          equipR icewand3
+          equipL icewand4
+        :?shoots > 9
+          equipR icewand5
+          equipL icewand6
+        :?shoots > 7
+          equipR poisonwand2
+          equipL firewand2
+        :?shoots > 5
+          equipR icewand7
+          equipL icewand8
+        :?shoots > 3
+          equipR icewand9
+          equipL icewand10
+        :
+          equipR icewand11
+          equipL icewand12
+        shoots -= 2
+      :
+        equip fire crossbow
+        shoots--
+    :?u.CanUse("heavy_hammer")
+      equip heavy hammer
+      activate r
+    /*
+    :?u.CanUse("bardiche")
+      equip bardiche
+      activate r
+    */
+    :?foe.debuffs.GetCount("chill") > 4 & u.CanUse("wand_vigor")
+      equipR wand_hidden_vigor
+      equipL triskelion
+      activate r
+    :?u.CanUse("mask")
+      equipR mask
+      activate r
+    :?ai.enabled & !ai.paused
+      equip fire crossbow
+    :
+      ?r.can_reload()
+        r.reload_all()
+      :
+        u.maskound()
+  :?foe.distance > 17
+    u.QuarterUse()
+    ?u.CanUse("lollipop_wand")
+      equipR lollipop_wand
+      equipL triskelion
+      activate r
+    :?buffs.string = "inf_speed"
+      ?foe.distance > 25
+        u.maskound()
+      :
+        u.RuneShield()
+    :
+      ?r.can_reload()
+        r.reload_all()
+      :?foe.distance > 25
+        u.maskound()
+        u.OuroQuest()
+      :
+        u.RuneShield()
+        ?item.left = triskelion
+          equipL @HAMMER@
+  :?foe.distance > 10
+    ?screen.i = 1 & u.loops % 2 = 1
+      ?u.CanDash()
+        u.Dash()
+    ?u.CanDashBash()
+      u.DashBash()
+    :?buffs.string = "inf_speed"
+      u.RuneShield()
+    :?r.can_reload()
+      r.reload_all()
+    :?foe.GetCount(20) < 4 & foe ! unpushable & 
+    ^foe ! immune_to_physical & foe ! immune_to_ranged
+      u.kb()
+    :
+      u.RuneShield()
+      ?item.left = triskelion
+        equipL @HAMMER@
+  :
+    ?foe ! boss
+      ?screen.i = 1 & u.loops % 2 = 1
+        activate voidweaver
+      ?foe.GetCount(20) < 4 & buffs.string ! "inf_speed" & 
+      ^foe ! unpushable & foe ! immune_to_physical & foe ! immune_to_ranged
+        u.kb()
+      :?foe.distance > 7
+        ?r.can_reload()
+          r.reload_all()
+        :
+          u.smoothcast(["shovel"])
+      ?foe.hp < 180 & is_bigiceswords_not_in_kd() & u.loops % 2 = 1
+        ?foe.distance > 4
+          u.smoothcast(["bigicesword1", "bigicesword2"])
+        :
+          equipR bigicesword1
+          equipL bigicesword2
+      :?foe.distance > 4
+        u.smoothcast(["unmaker1", "unmaker2"])
+      :
+        equipR unmaker1
+        equipL unmaker2
+    :
+      ?!ai.enabled & ai.paused
+        u.maskound()
+        u.OuroQuest()
+      :?buffs.string = "infernal"
+        u.moondial("fire sword +21/21 shiny", "fire sword +21/21 -shiny")
+      :
+        u.moonjuggling("fire sword +21/21 shiny", "fire sword +21/21 -shiny")
+      /*
+      :
+        equip fire crossbow
+      */

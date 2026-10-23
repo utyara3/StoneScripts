@@ -1,0 +1,23 @@
+func Display(x, y, color, text)
+  >`@x@,@y@,#@color@,@text@
+
+func binSearchEnemy(min, max, foe_cnt)
+  ?min = max
+    return min
+  var mid = (min + max)/2
+  ?foe.GetCount(mid) < foe_cnt
+    return binSearchEnemy(mid + 1, max, foe_cnt)
+  :
+    return binSearchEnemy(min, mid, foe_cnt)
+
+func getFoeDistance(foe_cnt)
+  return binSearchEnemy(0, 42, foe_cnt)
+
+
+?foe.distance < 40
+  for foe_cnt = 1..foe.count
+    var foe_dist = getFoeDistance(foe_cnt)
+    var foe_x = screen.FromWorldX(pos.x+foe_dist)
+
+    Display(foe_x, foe.z, white, "^ ^")
+

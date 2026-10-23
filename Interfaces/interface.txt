@@ -1,0 +1,13 @@
+/*
+main info:
+totaltime 
+pos x z
+screen i
+ai enabled etc
+foe distance, count
+dashes bashes
+buffs debuffs
+item right
+item left
+
+*/

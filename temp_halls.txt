@@ -1,0 +1,735 @@
+/*
+sys.cacheRemoteFiles = false
+sys.SetFileUrl(＂http://＂ +
+^ ＂127.0.0.1:8080/＂)
+*/
+
+import UI/MindstoneButton
+//import UI/BragMeter
+import Cosmetics/FireFly
+import Foes/FlowerFoes
+import Hats/StarCloak
+
+/*
+import timer
+import interface2
+*/
+
+disable hud ru
+
+?bighead
+  var scarf = import Cosmetics/WavyScarf
+  scarf.scarfColor = #red
+  scarf.ScarfMain()
+
+ // >h0,-1,#05780b,λ
+  >h-2,0,#eb8510,｛｛  ｝
+  >h0,0,#FFFF00,▶◀
+  >h1,1,#eb8510,´
+
+?item.right.state = 3
+  ?totaltime % 2 = 0
+    equipR dash shiny
+  :
+    equipR trisk
+  equip @item.right@
+?item.left.state = 3
+  equipL trisk
+  equipL @item.left@
+
+func Display(x, y, color, text)
+  >`@x@,@y@,#@color@,@text@
+
+var melee = ［］
+var ranged = ［］
+?loc.loop
+  melee.Clear()
+  ranged.Clear()
+
+var ban_list = ［
+＂skele＂, ＂bardiche＂,
+＂staff＂, ＂blade＂,
+＂talisman＂, ＂shovel＂,
+＂trisk＂
+］
+func reload_valid(item)
+  for ban : ban_list
+    ?item = ban
+      return false
+  return true
+
+
+var ranged_types = ［
+＂crossbow＂, ＂wand＂
+］
+func reload_type(item)
+  for type : ranged_types
+    ?item = type
+      return ＂ranged＂
+  return ＂melee＂
+
+
+var weapons_type = ［
+＂sword＂, ＂quarterstaff＂,
+＂staff＂, ＂crossbow＂,
+＂hammer＂, ＂wand＂,
+＂mask＂, ＂trisk＂,
+＂star＂, ＂quest＂,
+＂ouroboros＂, ＂blade＂,
+＂skeleton arm＂, ＂bardiche＂
+］
+
+var weapons_rune = ［
+＂poison＂, ＂vigor＂,
+＂aether＂, ＂fire＂,
+＂ice＂, ＂stone＂
+］
+var ret_weap = ＂＂
+func format_weapon(weapon)
+  ret_weap = ＂＂
+
+  for rune : weapons_rune
+    ?weapon = rune
+      ret_weap += string.Capitalize(rune) + ＂ ＂
+  
+  for type : weapons_type
+    ?weapon = type
+      ret_weap += string.Capitalize(type) + ＂ ＂
+  
+  ?weapon = ＂max＂
+    ret_weap += ＂*10* ＂
+  :
+    ret_weap += ＂*＂+string.Split(weapon, ＂*＂)［1］
+    ^ + ＂* ＂
+
+  ret_weap += ＂+＂ + string.Split(
+  ^weapon, ＂+＂)［1］    
+  
+  return ret_weap
+
+
+var components
+func check_weapon_name(weap, short)
+  components = string.Split(short, true)
+  for c : components
+    ?string.Sub(c, 0, 1) = ＂-＂
+      ?weap = string.Sub(c, 1)
+        return false
+    :
+      ?weap ! c
+        return false
+
+  return true      
+
+var reload_string = ＂＂
+func reload_display(x, y)
+  reload_string = ＂reload:\\n＂
+
+  ?melee.Count() > 0
+    for weapon : melee
+      reload_string += format_weapon(weapon)
+      ^ + ＂\\n＂
+  ?ranged.Count() > 0
+    for weapon : ranged
+      reload_string += format_weapon(weapon)
+      ^ + ＂\\n＂
+  
+  Display(x, y, rainFF, reload_string)
+
+
+func reload_listen()
+
+  ?ranged.Contains(item.right) 
+  ^ & item.right.state ! 4
+    ranged.RemoveAt(ranged.IndexOf(item.right))
+  ?melee.Contains(item.right)
+  ^ & item.right.state ! 4
+    melee.RemoveAt(melee.IndexOf(item.right))
+  
+  ?ranged.Contains(item.left)
+  ^ & item.left.state ! 4
+    ranged.RemoveAt(ranged.IndexOf(item.left))
+  ?melee.Contains(item.left)
+  ^ & item.left.state ! 4
+    melee.RemoveAt(melee.IndexOf(item.left))
+
+  ?item.right.state = 3
+    ?reload_valid(item.right)
+      ?reload_type(item.right) = ＂ranged＂
+        ?!ranged.Contains(item.right)
+          ranged.Add(item.right)
+      :
+        ?!melee.Contains(item.right)
+          melee.Add(item.right)
+
+  ?item.left.state = 3
+    ?reload_valid(item.left)
+      ?reload_type(item.left) = ＂ranged＂
+        ?!ranged.Contains(item.left)
+          ranged.Add(item.left)
+      :
+        ?!melee.Contains(item.left)
+          melee.Add(item.left)     
+
+func can_reload_melee()
+  ?melee.Count() > 0
+    return true
+  return false
+
+func can_reload_ranged()
+  ?ranged.Count() > 0
+    return true
+  return false
+
+func can_reload()
+  ?can_reload_melee() | can_reload_ranged()
+    return true
+  return false
+
+func need_reload(weapon)
+  for m : melee
+    ?check_weapon_name(m, weapon)
+      return true
+  for r : ranged
+    ?check_weapon_name(r, weapon)
+      return true
+  return false
+
+var ret_list = ［］
+var one_handed_weaps = ［
+＂staff＂, ＂skeleton arm＂, 
+＂heavy＂, ＂bardice＂,
+＂socketed_crossbow＂, ＂repeating crossbow＂,
+＂bardiche＂
+］
+func next_weapon(weapons, num)
+  ret_list.Clear()
+  for weapon : weapons
+    ?ret_list.Count() = num
+      break
+/*
+    for one_hand : one_handed_weaps
+      ?check_weapon_name(weapon, one_hand) & 
+      ^!need_reload(weapon)
+        ret_list.Clear()
+        ret_list.Add(weapon)
+
+        return ret_list
+*/
+    ?!need_reload(weapon) | 
+    ^num - (weapons.Count() -
+    ^weapons.IndexOf(weapon)) >= 0
+      ret_list.Add(weapon)
+
+  return ret_list
+      
+      
+func reload_melee()
+  ?can_reload_melee()
+    //reload_display(30, 1)
+    ?item.right ! trisk & item.left ! trisk
+      equipR trisk
+      equipL sword shiny
+    :
+      equipL trisk
+      equip @melee［0］@
+
+func reload_ranged()
+  ?can_reload_ranged()
+    //reload_display(30,1)
+    ?item.right ! trisk & item.left ! trisk
+      equipR trisk
+      equipL sword shiny
+    :
+      equip @ranged［0］@
+
+func reload_all()
+  ?can_reload_melee()
+    reload_melee()
+  :?can_reload_ranged()
+    reload_ranged()
+
+var smooth_track = ［0, 0］
+?smooth_track［0］ ! pos.x
+  smooth_track［0］ = pos.x
+  smooth_track［1］ = 0
+:
+  smooth_track［1］ = smooth_track［1］ + 1
+
+func smoothcast(items)
+  ?smooth_track［1］ % 2 = 0
+    ?items.Count() = 1
+      equip @items［0］@
+    :
+      equipR @items［0］@
+      equipL @items［1］@
+  :
+    equipR hatchet
+    equipL trisk
+
+var loops = 0
+?loc.loop
+  loops++
+
+var old_t = item.GetTreasureCount()
+var enduse = 0
+?loc.loop 
+  old_t = item.GetTreasureCount()
+  enduse = 0
+
+?old_t ! item.GetTreasureCount()
+  enduse++
+
+var delay = 30
+var moon = 0
+var moondialTimer = 0
+var swordtime = 0
+var moonmaulingTimer = 0
+var smoothcastTimer = 0
+var ListTimer = 0
+var awakedel = 30
+
+?loc.loop
+  moondialTimer = 0
+  swordtime = 0
+  moon = 0
+  smoothcastTimer = 0
+  ListTimer = 0
+
+?foe.distance > 7
+  moondialTimer = 0
+
+func BFG()
+  screen.next()
+  delay--
+  ?delay=0
+    equip blade
+    activate r
+    screen.ResetOffset()
+    delay = 30
+
+func DashBash()
+  ?item.GetCooldown(＂bash＂) <= 0
+    ?item.GetCooldown(＂dash＂) <= 0
+      ?foe.count >= 4 | (foe = boss & foe.buffs.string ! ＂mirror＂)
+        equipR bashing shield
+      :
+        equipR dashing shield shiny
+    :
+      ?foe.buffs.string ! ＂mirror＂
+        equipR bashing shield
+
+    equipL trisk
+  :
+    ?item.GetCooldown(＂dash＂) <= 0
+      equipR dashing shield shiny
+      equipL trisk
+      
+func Dash()
+  ?item.GetCooldown(＂dash＂) <= 0
+    equipR dashing shield shiny
+    equipL trisk
+
+func Bash()
+  ?item.GetCooldown(＂bash＂) <= 0
+    equipR bash
+    equipL trisk
+
+func CanDashBash()
+  ?item.GetCooldown(＂dash＂) <= 0 | 
+  ^item.GetCooldown(＂bash＂) <=0
+    return true
+  return false
+
+func CanDash()
+  ?item.GetCooldown(＂dash＂) <= 0
+      return true
+  return false
+
+func CanBash()
+  ?item.GetCooldown(＂bash＂) <= 0
+      return true
+  return false
+
+func OuroQuest()
+  ?item.left = ＂trisk＂ &
+  ^buffs.string ! ＂inf_speed＂
+    ?armor < maxarmor
+      equipL quest
+    :?foe.distance > 17
+      equipL ouro
+
+func moondial(item1, item2)
+  ?moondialTimer % 3 = 0
+    equipL moon
+    equipR @item1@
+  :?moondialTimer % 3 = 1
+    equipL moon
+    equipR @item2@
+  :
+    equipL @item2@
+    equipR @item1@
+  moondialTimer++
+
+func moonjuggling(s1, s2)
+    ?moon % 4 = 0
+      equipR @s2@
+      equipL @s1@
+    :?moon % 4 = 1
+      equipR moon
+      equipL @s1@
+    :?moon % 4 = 2
+      equipR @s2@
+      equipL @s1@
+    :
+      equipR @s2@
+      equipL moon
+    moon++
+
+func QuarterUse()
+  ?item.GetCooldown(＂quarterstaff＂)<1 &
+  ^item.CanActivate() & 
+  ^item.right ! ＂talisman＂ &
+  ^item.left ! ＂talisman＂
+    ?loc.stars < 11
+      equip quarterstaff shiny *0 +0
+    :
+      equip quarterstaff shiny *0
+    activate r
+
+func Compound()
+  equipR compound +21/21
+  equipL trisk
+
+
+var kb_list = ［
+＂big stone crossbow +21/18 shiny socketed＂
+］
+var kb_count = 0
+
+func kb()
+  ?kb_count = kb_list.Count()
+    kb_count = 0
+  //?!right.Contains(kb_list［kb_count % kb_list.Count()］)
+    //smoothcast(kb_list［kb_count % kb_list.Count
+  ?foe.distance > 4
+    smoothcast(［kb_list［kb_count 
+    ^ % kb_list.Count()］］)
+  :
+    equip @kb_list［kb_count % kb_list.Count()］@
+  //:
+
+  //:
+    //smoothcast(kb_list［kb_list.Count()-1］)
+  kb_count++
+
+func maskound()
+  ?armor >= 35
+    equipR mask
+  :
+    Compound()
+  equipL trisk
+
+func RuneShield()
+  ?foe = poison
+    equipR ice shield A +21
+  :?foe = vigor
+    equipR poison shield A +21
+  :?foe = aether
+    equipR vigor shield A +21
+  :?foe = fire
+    equipR aether shield A +21
+  :?foe = ice
+    equipR fire shield A +21
+  equipL trisk
+
+func CanUse(item)
+  ?item.CanActivate() & 
+  ^(item.GetCooldown(item) <= 0 
+  ^| item.right = item
+  ^ & item.right.state = 2)
+    return true
+  return false
+
+func binSearchEnemy(min, max, foe_cnt)
+  ?min = max
+    return min
+  var mid = (min + max)/2
+  ?foe.GetCount(mid) < foe_cnt
+    return binSearchEnemy(mid + 1, max, foe_cnt)
+  :
+    return binSearchEnemy(min, mid, foe_cnt)
+
+func getFoeDistance(foe_cnt)
+  return binSearchEnemy(0, 42, foe_cnt)
+
+var rec
+var infTime
+infTime = buffs.GetTime(＂buff_infernal＂)
+
+func infReduction()
+  ?!infTime
+    rec = 0
+  :?infTime
+    ?!rec
+      rec = infTime
+    :?(rec + 2 - infTime) % 60 = 0
+      equipL tri
+      equipR tower
+      return true 
+  return false
+
+var stopped = 0
+?loc.loop
+  stopped = 0
+
+?ai.enabled & !ai.paused 
+  ?smooth_track［1］ > 1
+    stopped++
+  ?smooth_track［1］ > 0 & 
+  ^buffs.string = ＂inf_speed＂
+    stopped++
+
+>`1,15,#red,stopped: @stopped@
+
+reload_listen()
+reload_display(30,3)
+?loc = halls & loc.stars = 15
+  var phase1killed = false
+  var shoots = 7
+  var hallsweaps = ［
+＂vigor crossbow shiny＂,
+＂vigor crossbow -shiny＂
+］
+  ?loc.loop
+    phase1killed = false
+    shoots = 7
+  ?loc.begin
+    brew wood + bronze
+  ?buffs.GetTime(＂berserk＂) <= 300
+  ^ & item.potion ! empty
+    activate potion
+  ?foe = phase1 & foe.hp < 1 
+    phase1killed = true
+  ?loops % 2 = 0 & screen.i = 4 &
+  ^CanUse(＂blade＂)
+    BFG()
+  :?summon.count = 0 & 
+    ^item.GetCooldown(＂quarterstaff＂) > 0
+      equipR aether talisman
+      equipL trisk
+      activate r
+  :?item.GetCooldown(＂voidweaver＂) > 0 &
+  ^summon.GetId() ! ＂cinderwisp＂
+    equipR fire talisman
+    equipL trisk
+    activate r
+
+  :?phase1killed & loops % 2 = 1 & 
+  ^CanUse(＂bardiche＂) & foe.state ! 2
+      
+      ?CanUse(＂wand_poison＂) & armor > 6
+        equipR wand_hidden_poison
+        activate r
+/*
+      :?CanUse(＂wand_vigor＂) 
+        equipR wand_hidden_vigor
+        activate r
+*/
+      :?CanUse(＂heavy_hammer＂)
+        equip heavy hammer
+        activate r
+
+      :?CanUse(＂mask＂)
+        equip mask
+        activate r
+      :?foe.distance > 11
+        ?CanUse(＂quarterstaff＂)
+          QuarterUse()
+      :?!CanUse(＂quarterstaff＂)
+        equip bardiche
+        activate r 
+      :
+        maskound()
+
+/*
+  :?phase1killed & CanUse(＂bardiche＂)
+    ?CanUse(＂wand_poison＂)
+      equipR wand_hidden_poison
+      activate r
+    :?CanUse(＂heavy_hammer＂)
+      equip heavy_hammer
+      activate r
+    :?foe.distance > 11
+      ?CanUse(＂quarterstaff＂)
+        QuarterUse()
+      :
+        maskound()
+    :?!CanUse(＂quarterstaff＂)
+      equip bardiche
+      activate r 
+    :
+      maskound()
+*/
+  :?loops = 0
+    ?totaltime < 3
+      maskound()
+    :?foe.distance > 16
+      QuarterUse()
+      equipR mask
+      equipL trisk
+    :?foe.distance >= 11
+      DashBash()
+    :
+      ?foe ! boss
+        equipR mask
+        equipL vigor wand -hidden
+      :?item.CanActivate()
+        equip vigor crossbow
+  :
+    ?((enduse >= 42 & loops % 2 = 0) |
+    ^(screen.i = 7 & loops % 2 = 1 &
+    ^foe.GetCount(24) < 1)) &
+    ^CanUse(＂staff_fire＂) & armor > 6
+      equip staff_hidden_fire
+      activate r
+    :?!item.CanActivate() &
+    ^buffs.GetTime(＂berserk＂) < 300
+      equipR mask
+      equipL trisk
+
+    :?foe = phase1 & 
+    ^ item.GetCooldown(＂mind＂) > 0 & shoots > 0
+      ?shoots > 2
+        ?shoots > 5
+          equipR icewand1
+          equipL icewand2
+        :?shoots > 3
+          equipR icewand3
+          equipL icewand4
+        :
+          equipR icewand5
+          equipL icewand6
+        shoots -= 2
+      :?shoots > 1
+        equip fire staff -hidden
+        shoots--
+      :
+        equip poison crossbow dP
+        shoots--
+/*
+      ?item.right.state = 3 | 
+      ^item.left.state = 3
+        shoots--
+*/
+    :?screen.i = 7 & CanUse(＂wand_poison＂)
+      equipR wand hidden poison
+      equipL trisk
+      activate r
+    :?pickup.distance <= 10
+      equipR star
+      equipL trisk
+    :?foe.distance > 17
+      ?foe ! phase1
+        QuarterUse()
+      ?foe = phase1 & item.CanActivate() 
+        ?CanUse(＂staff_poison＂) & loops % 2 = 1
+          equip staff_hidden_poison
+          activate r
+        :
+          smoothcast(［＂vigor crossbow＂］)
+/*
+          equipR vigor wand -hidden 
+          equipL trisk
+*/
+/*
+          smoothcast(
+          ^［＂vigor wand -hidden shiny＂,
+          ^＂vigor wand -hidden -shiny＂］)
+*/
+/*
+      :?screen.i = 7 & foe.distance < 19 &
+      ^loops % 2 = 1 & 
+      ^!need_reload(＂vigor crossbow＂)
+        equip vigor crossbow
+*/
+      :?can_reload() & buffs.string ! ＂inf_sp＂
+        reload_all()
+      :?screen.i = 7
+        equipR ice shield ai *0 +0 shiny
+        equipL trisk
+      :?foe.distance > 25 | foe = boss
+        maskound()
+      :
+        RuneShield()
+    :?foe.distance >= 11
+      ?screen.i = 1 & loops % 2 = 1 & 
+      ^foe ! boss
+        ?CanDash()
+          Dash()
+      :?CanDashBash()
+        DashBash()
+      :?buffs.GetTime(＂inf_speed＂) < 1 &
+      ^screen.i < 7
+        kb() 
+      :
+        RuneShield()
+    :
+      ?foe ! boss
+/*
+        ?buffs.GetTime(＂inf_speed＂) > 0
+          equipR vigor wand -hidden shiny
+          equipL vigor wand -hidden -shiny
+*/
+        ?screen.i = 1 & loops % 2 = 1
+          activate voidweaver
+        ?foe.GetCount(16) < 5 & 
+        ^ (foe ! immune_to_phys &
+        ^ (foe ! unpushable |
+        ^ foe.distance > 5)) & screen.i < 7 &
+        ^ buffs.GetTime(＂inf_speed＂) < 1
+          kb()
+        :?screen.i = 2 & loops % 2 = 1 & 
+        ^CanUse(＂heavy_hammer＂)
+          equip heavy hammer
+          activate r
+        :?foe.distance > 7 & can_reload()
+/*
+          ?can_reload()
+            ?can_reload_melee()
+              reload_melee()
+            :
+              reload_ranged()
+          :
+            smoothcast(［＂shovel＂］)
+*/
+          reload_all()
+        :?foe.distance > 4
+          smoothcast(
+          ^［＂vigor wand -hidden shiny＂,
+          ^＂vigor wand -hidden -shiny＂］)
+        :
+          equipR vigor wand -hidden shiny
+          equipL vigor wand -hidden -shiny
+      :
+        ?foe = phase1
+
+          ?foe.hp < 1600 & CanUse(＂mind＂)
+          ^ & loops % 2 = 1
+            ?can_reload_ranged()
+              reload_ranged()
+            :
+              equip mind
+
+          :?foe.distance > 1 & CanUse(＂mind＂)
+            equipR aether talisman
+            equipL star
+
+          :?CanUse(＂mind＂)
+            equip vigor crossbow
+           // equipR vigor sword D shiny
+          //  equipL vigor sword D -shiny
+          :
+            equip @next_weapon(hallsweaps,1)［0］@
+        :
+          equip vigor crossbow

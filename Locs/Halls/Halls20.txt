@@ -1,0 +1,96 @@
+var u = import utyara3/utils
+var rel = import utyara3/reload/reload
+var kb = import utyara3/kb
+
+var BFG_SCREEN_NUMBER = 4
+var decide_kb
+decide_kb = kb.decideKBDash()
+
+u.updateAll()
+?loc.begin
+  brew stone + bronze
+  // brew wood + bronze 
+?screen.i = BFG_SCREEN_NUMBER & u.loops % 2 = 0 & u.CanUse("blade")
+  u.BFG()
+:?u.loops = 0
+  ?totaltime < 3
+    equipR compound shield
+    equipL triskelion
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?summon.count = 1 & item.potion ! empty
+    activate potion
+  :?!ai.enabled | ai.paused
+    equipR mask
+    equipL triskelion
+  :?pickup.distance < 10
+    equipR mask
+    equipL star
+  :?foe.distance > 16 | foe.distance > 10 & !u.CanDashBash()
+    u.QuarterUse()
+    ?u.CanUse("lollipop_wand")
+      equipR lollipop_wand
+      equipL triskelion
+      activate r
+    :
+      equipR mask
+      equipL triskelion
+  :?foe.distance > 10
+    u.DashBash()
+  :
+    ?foe ! boss
+      equipR mask
+      equipL unmaker1
+    :
+      ...
+:
+  ?buffs.GetTime("berserk") < 300 & item.potion ! empty
+    activate potion
+  ?u.enduse > 30 & u.loops % 2 = 0 & u.CanUse("staff_fire")
+    equip staff_hidden_fire
+    activate r
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?pickup.distance < 10
+    equipR star
+    equipL triskelion
+  :?foe.distance > 17
+    u.QuarterUse()
+    ?u.CanUse("lollipop_wand")
+      equipR lollipop_wand
+      equipL triskelion
+      activate r
+    :?rel.can_reload()
+      rel.oh_reload()
+    :
+      ?foe.distance > 30
+        u.maskound()
+      :
+        u.RuneShield()
+  :?foe.distance > 10
+    ?u.CanDashBash()
+      u.DashBash()
+    :?decide_kb = "kb"
+      rel.kb()
+    :?rel.can_reload()
+      rel.oh_reload()
+    :
+      u.RuneShield()
+  :
+    ?foe ! boss
+      ?decide_kb = "kb"
+        rel.kb()
+      :?foe.distance > 7
+        u.smoothcast(["shovel"])
+      :?foe.distance > 4
+        u.smoothcast(["unmaker1", "unmaker2"])
+      :
+        equipR unmaker1
+        equipL unmaker2
+    :
+      ...
+

@@ -1,0 +1,344 @@
+/*
+reload v3.0 by utyara3
+
+Any improvements that improve performance or refine the mechanics are welcome
+
+warning:
+for some reason my weapons are named fire1, fire2, etc. did not reload, other weapons were reloaded instead.
+but here is icewand1, icewand2, etc. it works correctly,
+I don't know what's causing it. also, if for example you want to use a two-handed crossbow
+for next_weapon or burst, then you need to write socketed_crossbow due to the specifics of checking
+for two-handedness. be careful when write name of the weapon in the list
+
+usage:
+
+1. tracking weapon states and listing them is passive, just write:
+reload_listen()
+
+2. display of weapons that need to be reloaded on the screen:
+reload_display(x, y)
+
+3. update smooth_track for smoothcast to work correctly
+update_smooth_track()
+
+4. 1)simple usage:
+      ?can_reload()
+        reload_all()
+
+   2)advanced usage:
+      ?can_reload_melee()
+        reload_melee()
+      ---
+      ?can_reload_ranged()
+        reload_ranged()
+
+5. next_weapon(weapons_list, num_of_weapons)
+returns num_of_weapons from weapons_list that do not require reloading
+(if there are none in the list, then num_of_weapons of the latest weapons are returned)
+
+usage example:
+var burst_weaps = ［
+＂poison wand +14 -shiny＂,
+＂poison wand +14 shiny＂,
+＂aether sword +17＂,
+"heavy_hammer"
+＂long ice sword＂,
+"long poison sword shiny"
+］
+
+var nextweap
+nextweap = next_weapon(burst_weaps, 2)
+
+?foe.distance < 11
+  ?foe.distance > 4
+    smoothcast(nextweap)
+  :
+    ?nextweap.Count() > 1
+      equipR @nextweap［0］@
+      equipL @nextweap［1］@
+    :
+      //heavy_hammer in list
+      equip @nextweap[0]@
+
+
+6. burst - just burst. equip all weapons from list like above code.
+
+usage example:
+burst(burst_weaps)
+
+7. moondialing -
+its work is based not on variable counters,
+but on the state of the weapon, which works much better
+
+usage example:
+moondial("fire sword shiny", "fire sword -shiny")
+
+
+feel free to write to me in telegram (@utyara3) or discord, I will always be happy to answer you!!
+*/
+
+
+func Display(x, y, color, text)
+  >`@x@,@y@,#@color@,@text@
+
+var smooth_track = ［0, 0］
+func update_smooth_track()
+  ?smooth_track［0］ ! pos.x
+    smooth_track［0］ = pos.x
+    smooth_track［1］ = 0
+  :
+    smooth_track［1］ = smooth_track［1］ + 1
+
+func smoothcast(items)
+  ?smooth_track［1］ % 2 = 0
+    ?items.Count() = 1
+      equip @items［0］@
+    :
+      equipR @items［0］@
+      equipL @items［1］@
+  :
+    equipR hatchet
+    equipL trisk
+
+var melee = ［］
+var ranged = ［］
+
+var ban_list = ［
+＂skeleton_arm＂, ＂bardiche＂,
+＂staff＂, ＂blade＂,
+＂talisman＂, ＂shovel＂,
+＂trisk＂
+］
+func reload_valid(item)
+  for ban : ban_list
+    ?item = ban
+      return false
+  return true
+
+var ranged_types = ［
+＂crossbow＂, ＂wand＂,
+＂staff＂
+］
+func reload_type(item)
+  for type : ranged_types
+    ?item = type
+      return ＂ranged＂
+  return ＂melee＂
+
+var weapons_type = ［
+＂sword＂, ＂quarterstaff＂,
+＂staff＂, ＂crossbow＂,
+＂hammer＂, ＂wand＂,
+＂mask＂, ＂trisk＂,
+＂star＂, ＂quest＂,
+＂ouroboros＂, ＂blade＂,
+＂skeleton arm＂, ＂bardiche＂,
+＂compound＂, ＂shield＂,
+＂skeleton_arm＂
+］
+
+var weapons_rune = ［
+＂poison＂, ＂vigor＂,
+＂aether＂, ＂fire＂,
+＂ice＂, ＂stone＂
+］
+var ret_weap = ＂＂
+func format_weapon(weapon)
+  ret_weap = ＂＂
+
+  for rune : weapons_rune
+    ?weapon = rune
+      ret_weap += string.Capitalize(rune) + ＂ ＂
+
+  for type : weapons_type
+    ?weapon = type
+      ret_weap += string.Capitalize(type) + ＂ ＂
+
+
+  ?weapon = ＂max＂
+    ret_weap += ＂*10* ＂
+  :
+    ret_weap += ＂*＂+string.Split(weapon, ＂*＂)［1］
+    ^ + ＂* ＂
+
+  ret_weap += ＂+＂ + string.Split(
+  ^weapon, ＂+＂)［1］
+
+  return ret_weap
+
+var components
+func check_weapon_name(weap, short)
+  components = string.Split(short, true)
+  for c : components
+    ?string.Sub(c, 0, 1) = ＂-＂
+      ?weap = string.Sub(c, 1)
+        return false
+    :
+      ?weap ! c
+        return false
+
+  return true
+
+var reload_string = ＂＂
+func reload_display(x, y)
+  reload_string = ＂reload:\n＂
+
+  ?melee.Count() > 0
+    for weapon : melee
+      reload_string += format_weapon(weapon)
+      ^ + ＂\n＂
+      //reload_string += weapon + ＂\n＂
+  ?ranged.Count() > 0
+    for weapon : ranged
+      reload_string += format_weapon(weapon)
+      ^ + ＂\n＂
+     //reload_string += weapon + ＂\n＂
+  Display(x, y, rainFF, reload_string)
+
+func reload_listen()
+  ?ranged.Contains(item.right)
+  ^ & item.right.state ! 4
+    ranged.RemoveAt(ranged.IndexOf(item.right))
+  ?melee.Contains(item.right)
+  ^ & item.right.state ! 4
+    melee.RemoveAt(melee.IndexOf(item.right))
+
+  ?ranged.Contains(item.left)
+  ^ & item.left.state ! 4
+    ranged.RemoveAt(ranged.IndexOf(item.left))
+  ?melee.Contains(item.left)
+  ^ & item.left.state ! 4
+    melee.RemoveAt(melee.IndexOf(item.left))
+
+  ?item.right.state = 3
+    ?reload_valid(item.right)
+      ?reload_type(item.right) = ＂ranged＂
+        ?!ranged.Contains(item.right)
+          ranged.Add(item.right)
+      :
+        ?!melee.Contains(item.right)
+          melee.Add(item.right)
+
+  ?item.left.state = 3
+    ?reload_valid(item.left)
+      ?reload_type(item.left) = ＂ranged＂
+        ?!ranged.Contains(item.left)
+          ranged.Add(item.left)
+      :
+        ?!melee.Contains(item.left)
+          melee.Add(item.left)
+
+func can_reload_melee()
+  ?melee.Count() > 0
+    return true
+  return false
+
+func can_reload_ranged()
+  ?ranged.Count() > 0
+    return true
+  return false
+
+func can_reload()
+  return can_reload_melee() | can_reload_ranged()
+
+func need_reload(weapon)
+  for m : melee
+    ?check_weapon_name(m, weapon)
+      return true
+  for r : ranged
+    ?check_weapon_name(r, weapon)
+      return true
+  return false
+
+var ret_list = ［］
+var one_handed_weaps = ［
+＂staff＂, ＂skeleton_arm＂,
+＂heavy＂, ＂bardiche＂,
+＂socketed_crossbow＂, ＂repeating crossbow＂,
+"bardiche"
+］
+var ret_cond
+var weap_need_reload
+func next_weapon(weapons, num)
+  ret_list.Clear()
+  for weapon : weapons
+    weap_need_reload = need_reload(weapon)
+    ret_cond = num - (weapons.Count() -
+    ^weapons.IndexOf(weapon)) >= 0
+
+    ?ret_list.Count() = num
+      break
+
+    for one_hand : one_handed_weaps
+      ?check_weapon_name(weapon, one_hand)
+        ?!weap_need_reload | ret_cond
+          ret_list.Clear()
+          ret_list.Add(weapon)
+
+          return ret_list
+
+    ?!weap_need_reload | ret_cond
+      ret_list.Add(weapon)
+
+  return ret_list
+
+func reload_melee()
+    var next_reload
+    //reload_display(30, 1)
+    /*
+    ?item.right ! trisk
+      equipR trisk
+      equipL sword shiny
+    :
+      equipL trisk
+      ?melee［0］ ! ＂shiny＂
+        equip @melee［0］ + ＂ -shiny＂@
+      :
+        equip @melee［0］@
+    */
+    next_reload = next_weapon(melee, 2)
+    smoothcast(next_reload)
+
+func reload_ranged()
+    var next_reload
+    //reload_display(30,1)
+    /*
+    ?item.right ! trisk
+      equipR trisk
+      equipL sword shiny
+    :
+      equipL triskelion
+      ?ranged［0］ ! ＂shiny＂
+        equip @ranged［0］ + ＂ -shiny＂@
+      :
+        equip @ranged［0］@
+    */
+    next_reload = next_weapon(ranged, 2)
+    smoothcast(next_reload)
+
+func reload_all()
+  ?can_reload_melee()
+    reload_melee()
+  :?can_reload_ranged()
+    reload_ranged()
+
+
+func moondial(s1, s2)
+  ?!need_reload(s1)
+    equipL moon
+    equipR @s1@
+  :?!need_reload(s2)
+    equipL moon
+    equipR @s2@
+  :
+    equipR @s1@
+    equipL @s2@
+
+
+func burst(items)
+  var next_weaps = next_weapon(items, 2)
+  ?next_weaps.Count() > 1
+    equipR @next_weaps[0]@
+    equipL @next_weaps[1]@
+  :
+    equip @next_weaps[0]@

@@ -1,0 +1,388 @@
+/*
+Title:   Timer
+Version: 1.0
+Authors: Mario300893
+
+Description:
+A simple Timer
+
+Usage:
+import UI/Timer
+
+TO-DO:
+ - Better top menu interface (ui.AddText()).
+ - Option to hide/move screen resources.
+
+Log:
+ - v1.0 Initial release
+
+*/
+
+var utils=import Sorgin/Utils
+var stringExt=import Sorgin/Ext/String
+var storageExt=import Sorgin/Ext/Storage
+
+var coordsX
+var coordsY
+var coords2Y
+
+?!utils.isLevel()
+ return
+
+// load data
+var id			="sorgin.3.65."+loc.id+"."+loc.stars
+
+
+var records_fst =storageExt.GetArray(id+".fst",[0,[],[]])
+var records_sec	=storageExt.GetArray(id+".sec",[0,[],[]])
+var records_lst	=storageExt.GetArray(id+".lst",[0,[],[]])
+var config		=storageExt.GetArray("sorgin.Timer.config",［0,0,[true,true,true]］)	// [format,table,[toggles]]
+
+
+// ui
+var panel
+var optFormat
+var optTable
+var toggleTexts=[scores,last,secure]
+var toggleOpts=[]
+var tableTxt
+
+// common vars
+var runing=false
+var unavailable=true//	prevent late start
+var loops=0			//	loop count
+
+// data
+var records			//	current record time
+var record_diff		//	record diff
+var records_hp		//	current record hp
+var records_section	//	current record, section
+var records_stime	//	current record, section time
+var records_shp		//	current record, section initial hp
+
+var ihp=0			//	initial hp
+var lastTotaltime	//	saving last totaltime from last loop
+var lastBoss		//	last boss.id
+var lastSection		//	last screen.i
+
+// cached data (only updated on start, loops or records.Add())
+var unavailableMsg="    WAITING TO LOOP    "
+var unavailableMsgSize=string.Size(unavailableMsg)
+var cache_top
+var cache_table
+
+
+func Update()
+ ?!runing
+  Start()
+ :?totaltime=1
+  OnNewLoop()
+ ?unavailable
+  DisplayError()
+ :
+  Calculate()
+  Display()
+
+
+func Start()
+ runing=true
+
+ // limpiar versiones anteriores
+ ?records_fst[0]>0 & records_fst[0]<loc.bestTime | records_sec[0]>0 & records_sec[0]<loc.bestTime
+  records_fst=[0,[],[]]
+  records_sec=[0,[],[]]
+  records_lst=[0,[],[]]
+
+ ?totaltime=1
+  ResetData()
+
+func DisplayError()
+ >`@screen.w-unavailableMsgSize-1@,0,@color.Lerp(#ccc,#666,math.sin(time*0.06))@,@unavailableMsg@
+ return
+
+func Display()
+ var t=config[1]
+ var text=cache_top
+ ?config[2][0]
+  ?t=0
+   text=cache_top+" "+Format(totaltime)
+  >`@screen.w-string.Size(text)-3@,0,@text@
+
+ ?t=0 // minimal
+  return
+ 
+ >`@coordsX@,@coordsY@,@Format(totaltime-records_stime[t-1])@
+ >`@coordsX@,@coords2Y@,@Format(totaltime)@
+
+
+
+
+
+
+func OnNewLoop()
+ loops++
+ // calcular y almacenar tiempos anteriores
+ lastTotaltime++
+ AddSection(0)
+ AddSection(1)
+ ?lastTotaltime>=loc.bestTime // previene guardar tiempos adulterados
+  ?records_fst[0]=0 | lastTotaltime<records_fst[0]
+   records_fst=[lastTotaltime,records[0],records[1]]
+   storageExt.SetArray(id+".fst",records_fst)
+  ?hp>=ihp & (records_sec[0]=0 | lastTotaltime<records_sec[0])
+   records_sec=[lastTotaltime,records[0],records[1]]
+   storageExt.SetArray(id+".sec",records_sec)
+  records_lst=[lastTotaltime,records[0],records[1]]
+  storageExt.SetArray(id+".lst",records_lst)
+ ResetData()
+
+func Calculate()
+ lastTotaltime=totaltime
+ ?screen.i!lastSection// calcular a cada sección
+  lastSection=screen.i
+  AddSection(1)
+ ?foe=boss & foe.id!lastBoss & foe.distance<30// calcular a cada boss
+  lastBoss=foe.id
+  AddSection(0)
+
+func AddSection(i)
+  records[i].Add(lastTotaltime-records_stime[i])
+  records_hp[0].Add(hp-records_shp[i])
+  records_section[i]=records_section[i]+1
+  records_stime[i]	=lastTotaltime
+  records_shp[i]	=hp
+  UpdateCache()
+
+
+
+
+
+func ResetData()
+ records		=[[],[]]
+ record_diff	=[[],[]]
+ records_hp		=[[],[]]
+ records_section=[0,0]
+ records_stime	=[1,1]
+ records_shp	=[hp,hp]
+ ihp=hp
+ lastBoss="-1"
+ lastSection=screen.i
+ unavailable=false
+ CreatePanel()// buttons disapear in each loop
+ UpdateCache()
+
+func UpdateCache()
+ var t=config[1]
+ var l=∞
+ ?loops>0
+  l=loops
+ cache_top=l+" avg."+Format(loc.averageTime)+" best."+Format(loc.bestTime)
+ optFormat.text=stringExt.Pad(Format(loc.averageTime),8," ")
+ ?t=0
+  optTable.text=" Minimal"
+ :?t=1
+  optTable.text=" Compact"
+ :?t=2
+  optTable.text="Sections"
+
+ for i=0..toggleOpts.Count()-1
+  ?config[2][i]
+   toggleOpts[i].tcolor=#fff
+  :
+   toggleOpts[i].tcolor=#888
+
+ // update table (to-do)
+ ?t=0
+  tableTxt.text=""
+  return
+
+ var text=""
+ var formatW=string.Size(Format(1234))+1
+ var extra=5
+ var columns=[]
+ var fCount=records[t-1].Count()
+ var diff=record_diff[t-1]
+ coordsX=screen.w-(formatW+extra)+1
+ coordsY=fCount+2
+ coords2Y=records_fst[t].Count()+3
+
+
+ ?config[2][2]
+  columns.Add(records_sec[t])
+  text=text+stringExt.Pad("SEC",formatW," ")
+  extra++
+ ?config[2][1]
+  text=text+stringExt.Pad(" LAST",formatW," ")
+  columns.Add(records_lst[t])
+ text=text+stringExt.Pad(" BEST",formatW," ")
+ columns.Add(records_fst[t])
+ text=text+stringExt.Pad("RUN",formatW," ")
+ columns.Add(records[t-1])
+
+ text=text+"     "
+ ?config[2][2]
+  coordsX--
+  text=text+"[color=#red]♥[/color]"
+
+ for v:columns
+  ?v.Count()>fCount
+   fCount=v.Count()
+
+ ?fCount>0
+  var line
+  for i=0..fCount-1
+   line=[]
+   for v:columns
+    ?v.Count()>i
+     line.Add(stringExt.Pad(Format(v[i]),formatW," "))
+    :
+     line.Add(stringExt.Repeat(" ",formatW))
+   ?records[t-1].Count()>i & records_fst[t].Count()>i
+    ?records[t-1][i]>records_fst[t][i]
+     line.Add("[color=#red]"+stringExt.PadR("+"+(records[t-1][i]-records_fst[t][i])+"f",5," ")+"[/color]")
+    :?records[t-1][i]=records_fst[t][i]
+     line.Add("[color=#yellow]+0f[/color]")
+    :
+     line.Add("[color=#green]"+stringExt.PadR("-"+(records_fst[t][i]-records[t-1][i])+"f",5," ")+"[/color]")
+   :
+    line.Add(stringExt.Repeat(" ",5))
+   text=text+"\n"+string.Join("",line)
+  // falta que si es modo seguro muestre vidas perdidas
+ 
+ text=text+stringExt.Repeat("—",columns.Count()*formatW+extra)+"\n"
+ ?config[2][2]
+  text=text+stringExt.Pad(Format(records_sec[0]),formatW," ")
+ ?config[2][1]
+  text=text+stringExt.Pad(Format(records_lst[0]),formatW," ")
+ text=text+stringExt.Pad(Format(records_fst[0]),formatW," ")
+ text=text+stringExt.Repeat(" ",formatW+extra+1)+"\n"
+
+ tableTxt.h=fCount+2
+ tableTxt.w=columns.Count()*formatW+extra
+ tableTxt.x=screen.w-(columns.Count()*formatW+extra)
+ tableTxt.text=text
+
+
+
+
+func Format(x)
+ ?config[0]=0
+  return stringExt.PadL(x+"f",5," ")
+ :?config[0]=1
+  return utils.parseFrames(x,false)
+ :?config[0]=2
+  return utils.parseFrames(x,false)+"."+stringExt.PadL((x%30)+"",2,"0")+"f"
+
+
+
+
+
+func TogglePanel()
+ panel.visible=!panel.visible
+
+func CreatePanel()
+ // main button
+ var timeBtn=ui.AddButton()
+ timeBtn.style	=-3
+ timeBtn.x		=screen.w-3
+ timeBtn.y		=0
+ timeBtn.w		=3
+ timeBtn.h		=1
+ timeBtn.anchor=top_left
+ timeBtn.dock	=top_left
+ timeBtn.text	=" ♦ "
+ timeBtn.SetPressed(TogglePanel)
+
+ //	table data
+ tableTxt=AddText(1,1,1,1)
+
+
+ panel=ui.AddPanel()
+ panel.visible=false
+ panel.clip=false
+ panel.w =26
+ panel.h =10
+ panel.style=3
+ panel.color=#999
+ var t=ui.AddText("Format\nTable")
+ t.dock= top_left
+ t.x=7
+ t.y=4
+ panel.Add(t)
+
+ panel.Add(AddButton(9,2,3,1,0," ◀ ",OnClickFormat1))
+ panel.Add(AddButton(20,2,3,1,0," ▶ ",OnClickFormat2))
+ panel.Add(AddButton(9,3,3,1,0," ◀ ",OnClickTable1))
+ panel.Add(AddButton(20,3,3,1,0," ▶ ",OnClickTable2))
+ panel.Add(AddButton(15,5,7,3,-1,"Close",TogglePanel))
+
+ toggleOpts=[]
+ for i=0..toggleTexts.Count()-1
+  toggleOpts.Add(AddButton(3,5+i,10,1,0,stringExt.Pad(toggleTexts[i],10," "),ToggleFuncs[i]))
+  panel.Add(toggleOpts[i])
+
+ optFormat=AddText(12,2,8,1)
+ panel.Add(optFormat)
+ optTable=AddText(12,3,8,1)
+ panel.Add(optTable)
+
+
+func AddButton(x,y,w,h,style,text,onClick)
+ var btn=ui.AddButton()
+ btn.style	=style
+ btn.x		=x
+ btn.y		=y
+ btn.w		=w
+ btn.h		=h
+ btn.anchor =top_left
+ btn.dock	=top_left
+ btn.text	=text
+ btn.SetPressed(onClick)
+ return btn
+
+func AddText(x,y,w,h)
+ var btn=ui.AddText()
+ btn.x		=x
+ btn.y		=y
+ btn.w		=w
+ btn.h		=h
+ btn.anchor =top_left
+ btn.dock	=top_left
+ return btn
+
+
+func OnClickFormat1()
+ SetConfig(0,(config[0]+2)%3)
+
+func OnClickFormat2()
+ SetConfig(0,(config[0]+1)%3)
+ 
+func OnClickTable1()
+ SetConfig(1,(config[1]+2)%3)
+ 
+func OnClickTable2()
+ SetConfig(1,(config[1]+1)%3)
+
+ 
+func Toggle0()
+ Toggle(0)
+func Toggle1()
+ Toggle(1)
+func Toggle2()
+ Toggle(2)
+var ToggleFuncs=[Toggle0,Toggle1,Toggle2]
+
+func Toggle(i)
+ config[2][i]=!config[2][i]
+ UpdateCache()
+ Save()
+
+func SetConfig(i,x)
+ config[i]=x
+ UpdateCache()
+ Save()
+
+func Save()
+ storageExt.SetArray("sorgin.Timer.config",config)
+
+Update()

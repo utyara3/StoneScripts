@@ -1,0 +1,266 @@
+//disable hud ru
+
+var old_t = item.GetTreasureCount()
+var enduse = 0
+?loc.loop 
+  old_t = item.GetTreasureCount()
+  enduse = 0
+
+?old_t ! item.GetTreasureCount()
+  enduse++
+  
+func Display(x, y, color, text)
+  >`@x@,@y@,#@color@,@text@
+
+var weapons_type = ［
+＂sword＂, ＂quarterstaff＂,
+＂staff＂, ＂crossbow＂,
+＂hammer＂, ＂wand＂,
+＂mask＂, ＂triskelion＂,
+＂star＂, ＂quest＂,
+＂ouroboros＂, ＂blade＂,
+＂skeleton arm＂, ＂bardiche＂,
+］
+
+var weapons_rune = ［
+＂poison＂, ＂vigor＂,
+＂aether＂, ＂fire＂,
+＂ice＂, ＂stone＂
+］
+var ret_weap = ＂＂
+func format_weapon(weapon)
+  ret_weap = ＂＂
+
+  for rune : weapons_rune
+    ?weapon = rune
+      ret_weap += string.Capitalize(rune) + ＂ ＂
+  
+  for type : weapons_type
+    ?weapon = type
+      ret_weap += string.Capitalize(type) + ＂ ＂
+  
+  ?weapon = ＂max＂
+    ret_weap += ＂*10* ＂
+  :?string.Split(weapon, ＂*＂).Count()>1
+    ret_weap += ＂*＂+string.Split(weapon, ＂*＂)［1］
+    ^ + ＂* ＂
+  ?string.Split(weapon, ＂+＂).Count()  > 1
+    ret_weap += ＂+＂ + string.Split(
+    ^weapon, ＂+＂)[1]
+  
+  
+  return ret_weap
+
+var loops = 0
+?loc.loop
+  loops++
+
+disable loadout print
+
+func formatBuffs(str)
+  ?str
+    var ret = ＂＂
+    for dbf : string.Split(str, ＂,＂)
+      var dbr = string.Split(dbf, ＂:＂)
+        ?ret
+          ret += ＂; ＂
+        ret += dbr［2］ + dbr［0］ + ＂: ＂ + dbr ［3］
+    return ret
+
+var oldStates = ［］
+var oldTimes = ［］
+var curstate = 0
+var curtime = 0
+func FoeState(x, y, count, stcolor1, stcolor2, stcolor3)
+
+  Display(x,y,stcolor1,＂S:T＂)
+
+  ?oldStates.Count() < count
+    for i = 1..count
+      oldStates.Add(0)
+      oldTimes.Add(0)
+
+  ?foe.state ! curstate
+    ?oldStates.Count()<count
+      oldStates.Add(curstate)
+      oldStates.Add(curtime)
+    :
+      oldStates.RemoveAt(0)
+      oldTimes.RemoveAt(0)
+      oldStates.Add(curstate)
+      oldTimes.Add(curtime)
+    curstate = foe.state
+  curtime = foe.time
+
+  ?oldStates.Count() > 0
+    for i = 0..oldStates.Count() -1
+      Display(x+1,y+1+count-i,stcolor1,＂|＂)
+      Display(x+1-string.Size(oldStates［i］+＂＂),y+1+count-i,stcolor3,oldStates［i］)
+      Display(x+2,y+1+count-i,stcolor3,oldTimes［i］)
+  ?oldStates.Count() > count
+    oldStates.RemoveAt(count)
+
+
+  Display(x+1-string.Size(foe.state+＂＂),y+1,stcolor2,foe.state+＂|＂)
+  Display(x+2,y+1,stcolor2,foe.time)
+
+func locdisp(x,y,col1,col2)
+  Display(x,y,col1,＂loc | ＂)
+  Display(x+6,y,col2,loc.id + ＂ *＂ + loc.stars
+  ^ + ＂* gp: ＂ + loc.gp + ＂ loop: ＂ + loops)
+  Display(x+7,y+1,col2,＂enduse: ＂ + enduse + 
+  ^＂ totaltime: ＂ + totaltime)
+
+func resdisp()
+  Display(0,0,white,＂o8 ＂ + res.stone)
+  Display(screen.w/6, 0, white,
+  ^＂_/` ＂ + res.wood)
+  Display(screen.w*2/6, 0, white,
+  ^＂~≈ ＂ + res.tar)
+  Display(screen.w*3/6, 0, white,
+  ^＂.: ＂ + res.bronze)
+  Display(screen.w*4/6, 0, white,
+  ^＂@ ＂+ res.ki)
+  Display(screen.w*16/18, 0, white,
+  ^＂♦ ＂ + res.crystals)
+
+func border(color, char)
+  for i = 0..screen.w
+    Display(i,0,color,char)
+    Display(i,screen.h-1,color,char)
+  for i = 0..screen.h
+    Display(0,i,color,char)
+    Display(screen.w-1,i,color,char)
+
+var ai_list = ［］
+var items_string = ＂＂
+var items_x = 0
+var items_y = 0
+var activate_icons = ［
+＂MASK＂, ＂BLDE＂, ＂BARD＂, 
+＂QSTF＂, ＂DASH＂, ＂BASH＂, 
+＂HAMM＂, ＂MIND＂, ＂oWND＂,
+＂φWND＂, ＂❄WND＂, ＂∞WND＂,
+＂❤WND＂,＂oSTF＂, ＂φSTF＂, 
+＂❄STF＂, ＂∞STF＂, ＂❤STF＂,
+＂VOID＂, ＂CIND＂］
+var activate_names = ［
+＂mask＂, ＂blade＂, ＂bardiche＂, 
+＂quarterstaff＂, ＂dash＂, ＂bash＂,
+＂heavy_hammer＂, ＂mind＂, ＂wand_stone＂,
+＂wand_fire＂, ＂wand_ice＂, ＂wand_poison＂,
+＂wand_vigor＂, ＂staff_stone＂, ＂staff_fire＂, 
+＂staff_ice＂, ＂staff_poison＂, ＂staff_vigor＂,
+＂voidweaver＂, ＂cinderwisp＂］
+var i_cd = item.GetCooldown
+var bashs = 0
+var dashs = 0
+var quarters = 0
+var spaces = ＂       ＂
+
+?loc.loop
+  bashs = 0
+  dashs = 0
+  quarters = 0
+
+items_string = ＂＂
+for i : activate_names  
+  ?activate_names.IndexOf(i) % 4 = 0 & activate_names.IndexOf(i) >= 4
+    items_string += ＂\n＂
+  ?i_cd(i) <= 0
+    items_string += activate_icons［activate_names.IndexOf(i)］
+  :
+    ?string.Size(i_cd(i)+＂＂) < 4
+      items_string += i_cd(i) + string.Break(spaces, 4-string.Size(i_cd(i)+＂＂))［0］
+    :
+      items_string += i_cd(i)
+  items_string += ＂ ＂
+
+?item.GetCooldown(＂bash＂) = 270
+  bashs++
+?item.GetCooldown(＂dash＂) = 45
+  dashs++
+?item.GetCooldown(＂quarterstaff＂) = 130
+  quarters++
+?item.CanActivate()
+  >`0,1,#@orange@,@items_string@
+:
+  >`0,1,#red,@items_string@
+
+var curposx = 0
+var cur_time = 0
+var stoptime = 0
+
+?loc.loop
+  curposx = 0
+  cur_time = 0
+  stoptime = 0
+
+?curpos = pos.x
+  curtime++
+:
+  curtime = 0
+
+?curtime > 1
+  stoptime++
+
+curposx = pos.x
+
+var purp = FF00FF
+var orange = FFA500
+var green = 00ff00
+
+>`0,7,pos: x@pos.x@, y@pos.y@, z@pos.z@, 
+^i@screen.i@
+>`0,8,movespeed: x@player.moveX@
+>`15,8,z@player.moveZ@
+>`19,8,l@stoptime@
+>`12,9,@player.moveAddX@
+>`16,9,@player.moveAddZ@
+>`0,10,#@orange@,bestTime: @loc.bestTime@
+?ai.enabled
+  Display(0,12,green,＂enabled＂)
+:
+  Display(0,12,purp,＂enabled＂)
+>`7,12,|
+?ai.paused
+  Display(8,12,green,＂paused＂)
+:
+  Display(8,12,purp,＂paused＂)
+>`14,12,|
+?ai.walking
+  Display(15,12,green,＂walk＂)
+:
+  Display(15,12,purp,＂walk＂)
+>`19,12,|
+?ai.idle
+  Display(20,12,green,＂idle＂)
+:
+  Display(20,12,purp,＂idle＂)
+
+>`0,13,foe.distance: @foe.distance@
+>`0,14,foe.count: @foe.count@
+>`0,16,dash: d@dashs@ b@bashs@ q@quarters@
+>`0,18,pb: @formatBuffs(buffs.string)@
+>`0,19,pd: @formatBuffs(debuffs.string)@
+>`0,20,fb: @formatBuffs(foe.buffs.string)@
+>`0,21,fd: @formatBuffs(foe.debuffs.string)@
+>`0,22,R | @format_weapon(item.right)@
+>`0,23,L | @format_weapon(item.left)@
+>`55,22,s: @item.right.state@
+>`55,23,s: @item.left.state@
+>`61,22,t: @item.right.time@
+>`61,23,t: @item.left.time@
+>`68,22,g: @item.right.gp@
+>`68,23,g: @item.left.gp@
+>`0,24,#@green@,elite: @encounter.eliteMod@
+>`0,25,f:@foe@
+
+FoeState(22,1,3,purp,green,orange)
+locdisp(26,1,purp,green)
+//resdisp()
+
+/*
+?ai.idle
+  border(green, ＂▓＂)
+*/

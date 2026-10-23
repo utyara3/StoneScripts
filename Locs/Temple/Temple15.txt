@@ -1,0 +1,219 @@
+/*
+FEATURES
+
+NO POTBUG INFERNAL
+?((u.enduse > 30 & u.loops % 2 = 0) |
+^(screen.i = INFERNAL_SCREEN_NUMBER & loops % 2 = 1)) &
+^u.CanUse("staff_fire") & armor*10+armor.f > 80
+  equip staff_hidden_fire
+  activate r
+
+TALISMAN SWAP
+?item.GetCooldown("voidweaver") > 0 & summon.GetId() ! "cinderwisp" &
+  ^(pickup.distance > 20 | item.right = fire talisman)
+  equipR fire talisman
+  equipL triskelion
+  activate r
+*/
+
+
+var u = import utyara3/utils
+
+var BFG_SCREEN_NUMBER = 12
+var HAMMER = "ice hammer aI"
+var kb_cond
+var max_dist_between
+var dists = []
+
+dists.Clear()
+max_dist_between = 0
+
+for f = 1..foe.GetCount(16+math.RoundToInt(
+  ^math.Min(item.GetCooldown("dash"), item.GetCooldown("bash"))/2))
+  dists.Add(u.getFoeDistance(f))
+
+?dists.Count() > 1
+  for dist = 1..dists.Count()-1
+    var difference = dists[dist] - dists[dist-1]
+    ?difference > max_dist_between
+      max_dist_between = difference
+
+?foe
+  kb_cond = foe.GetCount(30) < 4 & 
+  ^foe ! unpushable & foe ! immune_to_physical & foe ! immune_to_ranged &
+  ^math.Abs(pos.z - foe.z) < 2 &
+  ^foe.distance < 14 & max_dist_between < 11
+
+u.updateAll()
+?loc.begin
+  // brew stone + bronze
+  brew wood + bronze
+/*
+?screen.i = BFG_SCREEN_NUMBER & u.loops % 2 = 0 & u.CanUse("blade")
+  u.BFG()
+*/
+:?u.loops = 0
+  ?totaltime < 3
+    equipR compound shield
+    equipL triskelion
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?summon.count = 1 & item.potion ! empty
+    activate potion
+  :?item.GetCooldown(＂ice_staff＂) < 1
+    equip staff_hidden_ice 
+    activate r
+  :?!ai.enabled | ai.paused
+    equipR mask
+    equipL triskelion
+  :?pickup.distance < 10
+    equipR mask
+    equipL star
+  :?foe.distance > 16 | foe.distance > 10 & !u.CanDashBash()
+    u.QuarterUse()
+    ?u.CanUse("lollipop_wand")
+      equipR lollipop_wand
+      equipL triskelion
+      activate r
+    :
+      equipR mask
+      equipL trisk
+/*
+      ?item.left = triskelion
+        equipL @HAMMER@
+      :
+        equipL triskelion
+*/
+  :?foe.distance > 10
+    u.DashBash()
+  :
+    ?foe ! boss
+      equipR mask
+      equipL unmaker1
+    :
+      ?foe.state = 112 & foe.time = 58 & foe = naga
+        equipR mask
+        equipL mind
+      :
+        u.moonjuggling("ice_moonjuggling_1", "ice_moonjuggling_2")
+:
+  ?buffs.GetTime("berserk") < 300 & item.potion ! empty
+    activate potion
+  ?u.enduse > 33 & armor*10+armor.f > 60 & u.CanUse("staff_fire")
+    equip staff_hidden_fire
+    activate r
+  /*
+  :?u.loops % 2 = 1 & (screen.i=4&pos.x>260&foe.count<1|
+  ^screen.i >= 12 & pos.x > 800 & foe.count < 1) &
+  ^foe ! boss & buffs.GetTime("inf_speed") < 1 &
+  */
+  :?u.loops % 2 = 1 & buffs.string ! "infernal" & foe ! boss &
+  ^screen.i ! 1 &
+  ^u.CanUse("staff_fire") & armor*10 + armor.f > 60
+    u.useInfernalPot()
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0 & 
+  ^u.CanUse("aether_talisman") & foe.distance > 20
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?pickup.distance < 10
+    equipR star
+    equipL triskelion
+  :?!item.CanActivate() & buffs.GetTime("berserk") < 300
+    equipR mask
+    equipL trisk
+  :?foe.distance > 17
+    ?screen.i ! 1 | foe.distance ! 9999
+      u.QuarterUse()
+    ?u.CanUse("lollipop_wand") & foe ! nagaraja & foe.distance > 25
+      equipR lollipop_wand
+      equipL triskelion
+      activate r
+    /*
+    :?u.loops % 2 = 1 & screen.i = 13 & foe.distance < 25 & u.CanUse("wand_stone")
+      equipR wand_hidden_stone
+      equipL triskelion
+      activate r
+    :?u.loops % 2 = 1 & screen.i = 13 & foe.distance < 25 & u.CanUse("wand_poison") & armor*10 + armor.f > 60
+      equipR wand_hidden_poison
+      equipL triskelion
+      activate r
+    */
+    :?u.can_reload()
+      u.reload_all()
+    :?foe.distance > 40 | foe = boss
+      u.maskound()
+    :
+      u.RuneShield()
+  :?foe.distance > 10
+    ?!u.CanDashBash() & foe.distance > 13
+      u.QuarterUse()
+    ?u.loops % 2 = 1 & screen.i = 2 & u.CanDashBash()
+      ?u.CanDash()
+        u.Dash()
+      :
+        u.Bash()
+    :?u.CanDashBash()
+      u.DashBash() 
+    :?u.can_reload_melee()
+      u.reload_melee()
+    :?kb_cond
+      u.kb()
+    :?u.can_reload()
+      u.reload_all()
+    :
+      u.RuneShield()
+  :
+    ?(screen.i = 2 | screen.i = 13 & pos.x > 858 & u.getFoeDistance(foe.count) < 35)
+    ^& u.CanUse("heavy_hammer")  & foe ! boss & u.loops % 2 = 1
+      equip heavy_hammer
+      activate r
+    /*
+    :?u.loops % 2 = 1 & screen.i = 13 & u.CanUse("voidweaver") & summon.count = 1
+      activate voidweaver
+    */
+    :?foe ! boss
+      ?kb_cond
+        u.kb()
+      :?math.Abs(pos.z-foe.z) > 2 & u.CanUse("wand_stone")
+        equipR wand_hidden_stone
+        equipL trisk
+        activate r
+      :?foe.distance > 7
+        ?foe.count > 3// & foe.count < 8
+          u.smoothcast(["ice crossbow"])
+        :
+          u.smoothcast(["shovel"])
+      :?foe.distance > 5
+        ?buffs.GetCount("smite") > 0 & foe.GetCount(7) = foe.GetCount(15) & 
+        ^foe.GetCount(7) < 5
+          u.smoothcast(["ice sword +9 shiny", "ice sword +9 -shiny"])
+        :
+          //u.smoothcast(["unmaker1", "unmaker2"])
+          equipR unmaker1
+          equipL unmaker2
+      :
+        var lastfoe
+        lastfoe = u.getFoeDistance(foe.count)
+        ?lastfoe > 8 & lastfoe < 15 + math.Min(item.GetCooldown("dash"),
+        ^item.GetCooldown("bash")) / 2 & foe.GetCount(9) > 3
+          equip apsbardiche
+        :
+          equipR unmaker1
+          equipL unmaker2
+    :
+      ?foe.distance > 5
+        u.smoothcast(["ice crossbow"])
+      :?foe.state = 112 & foe.time = 58 & foe = naga
+        equipR mask
+        equipL mind
+      :?u.CanUse("staff_poison") & foe = naga & u.loops % 2 = 1 &
+      ^armor*10+armor.f > 80
+        equip staff_hidden_poison
+        activate r
+      :?buffs.string = "infernal"
+        u.moondial("ice_moonjuggling_1", "ice_moonjuggling_2")
+      :
+        u.moonjuggling("ice_moonjuggling_1", "ice_moonjuggling_2")

@@ -1,0 +1,10 @@
+func AAC()
+  ?item.right.state = 3
+    ?totaltime % 2 = 0
+      equipR dash +0 *0 shiny
+    :
+      equipR trisk
+    equip @item.right@
+  ?item.left.state = 3
+    equipL trisk
+    equipL @item.left@

@@ -1,0 +1,12 @@
+smite - 155
+
+wand shoot +21 - 80, with smite = 80+155 = 235
+
+bardiche - 52 (168 +21), 35% crit, 13.5 mult, +17 if ability
+2498 max ability damage
+
+
+heavy hammer - 145, with smite = 145+155 = 300
+
+mask - 10 (6 shoots), with smite = (10+155)*6 = 990
+

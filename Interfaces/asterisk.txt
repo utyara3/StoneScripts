@@ -1,0 +1,69 @@
+func Display(x, y, color, text)
+  >`@x@,@y@,#@color@,@text@
+
+
+var days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+func get_short_day_name(year, month, day)
+  ?month < 3
+    month = month + 12
+    year = year - 1
+
+  var K = year % 100
+  var J = year // 100
+
+  var h = (day + math.FloorToInt((13 * (month + 1)) / 5) + K + 
+          ^math.FloorToInt(K / 4) + math.FloorToInt(J / 4) + 5 * J) % 7
+
+  //var index = math.Floor(h)
+
+  return days[h]
+
+func pad(num)
+  ?num < 10
+    num = "0" + num
+
+  return num
+
+func get_time_string(hour, minute, second)
+  return pad(hour) + ":" + pad(minute) + ":" + pad(second)
+
+func display_time(x, y, color)
+  var year = time.year
+  var month = time.month
+  var day = time.day
+
+  var day_name = get_short_day_name(year, month, day)
+  
+  var day_string = year + " " + pad(month) + "/" + pad(day) +
+                   ^ " " + day_name
+
+  var time_string = get_time_string(time.hour, time.minute, time.second)
+
+  Display(x, y, color, day_string + "  " + time_string)
+
+// ============================================
+
+func format_loc_time(frames)
+  return math.Round(frames / 60)
+
+func loc_info(x, y, color, loops)
+  var loc_str = "Loc | " + loc.id + "  ★ " + loc.stars + "     loop : " + loops
+  
+  var best_sec = format_loc_time(loc.bestTime)
+  var average_sec = format_loc_time(loc.averageTime)
+  var total_sec = format_loc_time(totaltime)
+
+  var loc_time_str = ascii
+Loc | {0}  ★ {0}     loop : {1}
+Time| Best : {2} s, Average : {3} s, Total : {4} s
+             {5} f,           {6} f,         {7} f
+asciiend
+
+  var ret = string.Format(loc_time_str, loc.id, loc.stars, loops, 
+                      ^best_sec, average_sec, total_sec, 
+                      ^loc.bestTime, loc.averageTime, totaltime)
+
+  Display(x,y,color,ret)
+
+display_time(0, 0, white)
+loc_info(10, 1, white, 0)

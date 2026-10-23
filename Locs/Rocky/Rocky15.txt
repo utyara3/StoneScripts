@@ -1,0 +1,280 @@
+/*
+scout hp - 3150
+1st phase hp - 6900
+2nd phase hp - 19000
+3rd phase hp - 30000
+
+stone foes:
+216 - aps crit
+280 - aps dmg 
+
+scout:
+2 smite hits 
+3150 - (155+280)*2 = 2295 remains
+
+just moondial:
+2295/280 = 8.1 = 9 hits
+2 hits in 3 frames - 8 hits (12 frames) + reload (1 frame) + 1 hit = 14 frames
+
+with burst:
+2295/219 = 10.4 = 11 hits
+
+
+3rd phase
+
+597 - mult
+777 berserker + mult
+
+30000 / 597 = 50.25 = 51 hits = 50 / 2 * 3 + 2 = 77 frames
+30000 / 777 = 38.61 = 39 hits = 38 /2 *3 + 2 = 59 frames
+
+diff = 77 - 59 = 18 frames
+
+*/
+
+
+disable npcDialog
+
+var u = import utyara3/utils
+var rel = import utyara3/reload/reload
+var kb = import utyara3/kb
+
+var w1
+var w2
+
+var sckf = false
+var sckt = 0
+var p1kf = false
+var p1kt = 0
+var p2kf = false
+var p2kt = 0
+
+var next_weap
+
+?loc.loop
+  sckf = false
+  sckt = 0
+  p1kf = false
+  p1kt = 0
+  p2kf = false
+  p2kt = 0
+
+
+?foe = phase1 & !sckf
+  sckf = true
+?foe = phase1 & foe.hp < 1 & !p1kf
+  p1kf = true
+?foe = phase2 & foe.hp < 1 & !p2kf
+  p2kf = true
+
+?sckf & !p1kf
+  sckt++
+?p1kf & !p2kf
+  p1kt++
+?p2kf
+  p2kt++
+
+u.Display(17, 10, white, sckt + " " + p1kt + " " + p2kt)
+
+// 216 280
+// 10*216 + 3*280 = 3000
+// 7*280 = 1960
+
+var burstlist 
+burstlist = [
+"vigor sword dL +21/21",
+"aether1", "fire1",
+"aether2", "fire2",
+"icecrit2", "poison1", 
+"icecrit1", "vigor1", 
+"poison2", "vigor2",
+]
+
+u.updateAll()
+?loc.begin
+  equipR compound shield
+  equipL trisk
+  brew stone + bronze
+:?u.loops = 0
+  ?totaltime < 4
+    equipR compound shield +21/21
+    equipL trisk
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0
+    equipR fire talisman
+    equipL trisk
+    activate r
+  :?summon.count = 1 & item.potion ! empty
+    activate potion
+  :?!ai.enabled | ai.paused
+    equipR mask
+    equipL trisk
+  :?pickup.distance < 10
+    equipR mask
+    equipL star
+  :?foe.distance > 16 | foe.distance > 10 & !u.CanDashBash()
+    u.QuarterUse()
+    ?u.CanUse("lollipop_wand")
+      equipR mask
+      equipL lollipop_wand
+      activate l
+    :
+      equipR mask
+      equipL triskelion
+  :?foe.distance > 10
+    u.DashBash()
+  :
+    ?foe.debuffs.GetCount("chill") ! 6 
+      equipR mask
+      equipL ice sword dI +21/21
+    :?foe.debuffs.GetCount("_damage") ! 1 
+      equipR mask
+      equipL poison sword dP +21/21
+    :?(hp < maxhp | foe = phase1 | foe = scout) & foe ! phase2
+      equipR mask
+      equipL vigor sword dL +21/21
+    :?foe = phase2
+      equipR mask
+      ?foe = poison
+        equipL icecrit1 
+      :?foe = vigor
+        equipL poison1
+      :?foe = aether
+        equipL vigor1
+      :?foe = fire
+        equipL aether1
+      :
+        equipL fire1
+    :
+      ?foe.state = 32 & foe.time > 75 & u.CanUse("mask")
+        equipR mask
+        activate r
+      :?armor*10+armor.f > 80 & u.CanUse("staff_poison")
+        equip staff_hidden_poison
+        activate r
+      :?buffs.GetTime("lucky") > 5
+        rel.moondial("icecrit1", "icecrit2")
+      :
+        equipR mask
+        equipL icecrit1 
+:
+  ?p1kt = 170 // | p2kt = 250
+    u.QuarterUse()
+  ?u.enduse > 33 & u.loops % 2 = 0
+    ?u.CanUse("staff_aether") & armor*10+armor.f > 20
+      equip staff_hidden_aether +21
+      activate r
+    :?u.CanUse("staff_fire") & armor*10+armor.f > 60
+      equip staff_hidden_fire
+      activate r
+  :?p2kt >= 215 & p2kt < 300 & foe.distance > 17 & u.loops % 2 = 1
+    ?item.potion ! empty
+      activate potion
+    :?u.CanUse("staff_poison") & armor*10+armor.f > 80
+      equip staff_hidden_poison
+      activate r
+    :?u.CanUse("heavy_hammer")
+      equip heavy hammer
+      activate r
+    :?u.CanUse("bardiche")
+      ?foe.distance = 18
+        u.QuarterUse()
+        u.DashBash()
+      :?foe.distance <= 17 & foe.distance >= 10 & item.right ! bardiche
+        u.DashBash()
+      :
+        equip dmgbardiche 
+        activate r
+    :
+      u.DashBash()
+  :?screen.i = 2 & foe = scout & foe.hp < 1 & u.loops % 2 = 1 & u.CanUse("staff_fire") & armor*10+armor.f > 60
+    equip staff_hidden_fire
+    activate r
+  :?pickup.distance < 10
+    equipL star
+    equipR trisk 
+  :?u.CanUse("heavy_hammer") & pos.x = 259 & !p1kf
+    equip heavy_hammer
+    activate r
+  :?!ai.enabled & pos.x >= 259 &
+    ^(foe.state = 118 & foe.time > 0)
+    ^& u.CanUse("bardiche")
+      ?foe.distance = 18
+        u.QuarterUse()
+      :?foe.distance <= 17 & foe.distance >= 10 & item.right ! bardiche
+        u.DashBash()
+      :
+        equip dmgbardiche 
+        activate r
+  :?pos.x > 248 & u.CanUse("bardiche") & buffs.GetTime("bullet") > 0
+    equip dmgbardiche
+    activate r
+  :?foe.distance > 17
+    ?ai.enabled & !ai.paused & (foe ! scout | foe.distance < 22)
+      u.QuarterUse()
+    ?u.CanUse("lollipop_wand")
+      equipR lollipop_wand
+      equipL trisk
+      activate r
+    :?buffs.GetTime("lucky") < 300
+      equipR mask
+      equipL trisk
+    :?rel.can_reload()
+      rel.oh_reload()
+    :?foe = scout
+      equipR bash
+      equipL trisk
+    :
+      u.maskound()
+  :?foe.distance > 10
+    ?!ai.enabled
+      u.maskound()
+    :?u.CanDashBash()
+      u.DashBash()
+    :?rel.can_reload()
+      rel.oh_reload()
+    :
+      u.maskound()
+  :
+    ?!ai.enabled | ai.paused
+      u.maskound()
+    // ?foe = scout & u.loops % 2 = 1
+    ?u.loops % 2 = 0 & (foe = scout | foe = phase1)
+      rel.moondial("ice sword dI +21/21", "vigor sword dL +21/21")
+    :?foe = scout | foe = phase1
+      ?buffs.GetCount("smite") > 2
+        equipL moon
+
+        ?!rel.need_reload("poison sword dI +21/21")
+          equipR poison sword dP +21/21
+        :
+          equipR ice sword dI +21/21
+      :
+        ?!rel.need_reload(burstlist[burstlist.Count()-1])
+          next_weap = rel.next_weapon(burstlist, 1)
+          equipL moon
+          equipR @next_weap[0]@
+        :
+          rel.moondial("ice sword dI +21/21", "poison sword dP +21/21")
+      
+    :?foe = phase2
+      ?foe = poison
+        rel.moondial("icecrit1", "icecrit2")
+      :?foe = vigor
+        rel.moondial("poison1", "poison2")
+      :?foe = aether
+        rel.moondial("vigor1", "vigor2")
+      :?foe = fire
+        rel.moondial("aether1", "aether2")
+      :
+        rel.moondial("fire1", "fire2")
+    :?foe = phase3
+      ?u.CanUse("blade") & u.loops % 2 = 0 & foe.hp < 777
+        equip blade
+        activate r
+      :
+        ?!rel.need_reload(burstlist[burstlist.Count()-1]) & u.loops % 2 = 1
+          next_weap = rel.next_weapon(burstlist, 1)
+          equipL moon
+          equipR @next_weap[0]@
+        :
+          rel.moondial("iceelem1", "iceelem2")

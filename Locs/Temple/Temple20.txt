@@ -1,0 +1,189 @@
+var u = import utyara3/utils
+
+
+u.updateAll()
+?loc.begin
+  brew stone + bronze 
+
+?screen.i = 4 & u.loops % 2 = 0 & u.CanUse("blade")
+  u.BFG()
+:?u.loops = 0
+  ?foe = monarch
+    loc.leave()
+  ?totaltime < 3
+    equipR compound shield
+    equipL triskelion
+  :?!ai.enabled | ai.paused
+    equipR mask
+    equipL trisk
+  :?u.CanUse("lollipop_wand")
+    equipR mask 
+    equipL lollipop wand
+    activate l
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0 & screen.i = 0 & foe ! boss
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?buffs.GetTime("lucky") < 300 & item.potion ! empty & summon.count = 1
+    activate potion
+  :?foe.distance > 16 | foe.distance > 10 & !u.CanDashBash() | !ai.enabled | ai.paused
+    ?foe ! naga
+      u.QuarterUse()
+    equipR mask
+    ?item.left = triskelion
+      ?foe ! boss & foe.distance < 40
+        equipL ice hammer aI 
+      :
+        u.OuroQuest()
+
+    :
+      equipL triskelion
+  :?foe.distance > 10
+    u.DashBash()
+  :
+    ?foe ! boss
+      equipR mask
+      equipL unmaker1
+    :?foe ! nagaraja
+      equipR mask
+      equipL ice sword D +21/21
+    :
+      ?foe.state = 112 & foe.time = 58
+        equipR mask
+        equipL mind
+      :?u.CanUse("staff_poison") & armor*10+armor.f > 80
+        equip staff_hidden_poison
+        activate r
+      :?buffs.GetTime("lucky") > 10
+        u.moondial("ice_moondial_crit_1", "ice_moondial_crit_2")
+      :
+        equipR mask
+        equipL ice_moondial_crit_1
+:
+  ?buffs.GetTime("lucky") < 10 & item.potion ! empty
+    activate potion
+  ?buffs.GetTime("lucky") < 300 & !item.CanActivate()
+    equipR mask
+    equipL trisk
+  :?u.enduse > 28 & u.loops % 2 = 0
+    ?u.CanUse("staff_poison") & armor*10+armor.f>80
+      equip staff_hidden_poison
+      activate r
+      /*
+    :?u.CanUse("staff_aether") & armor > 2
+      equip staff_hidden_aether
+      activate r
+*/
+    :?item.potion ! empty
+      activate potion
+    :
+      equip staff_hidden_fire
+      activate r
+  :?screen.i = 4 & u.CanUse("staff_fire") & u.loops % 2 = 1 & armor*10+armor.f > 60
+    equip staff_hidden_fire
+    activate r
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0 & screen.i = 0 & foe ! boss
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?u.CanUse("lollipop_wand")
+    equipR mask 
+    equipL lollipop wand
+    activate l
+  :?pickup.distance < 10
+    equipR star
+    equipL triskelion
+  :?foe.distance > 15
+    u.QuarterUse()
+    ?screen.i = 1 & u.CanUse("wand_stone") & foe.distance < 30
+      equipR wand_hidden_stone
+      equipL triskelion
+      activate r
+    :?u.infReduction()
+      return
+    :?buffs.string ! "inf_speed"
+      ?u.can_reload()
+        u.reload_all()
+      :?foe.distance > 30 | foe = boss
+        u.maskound()
+        u.OuroQuest()
+      :?foe.distance > 20 & buffs.string = "buff_range" | buffs.string ! "buff_range"
+        u.RuneShield()
+        ?item.left = triskelion
+          equipL ice hammer
+      :
+        u.smoothcast(["shovel"])
+    :
+      ?foe.distance > 25
+        u.maskound()
+      :?foe.distance > 20 & buffs.string = "buff_range" | buffs.string ! "buff_range"
+        u.RuneShield()
+      :
+        u.smoothcast(["shovel"])
+  :?foe.distance > 10
+    ?u.CanDashBash()
+      u.DashBash()
+    :?u.can_reload()
+      u.reload_all()
+    :?buffs.string ! "buff_range" | foe.distance > 14
+      u.smoothcast(["shovel"])
+    :
+      ?foe.hp + foe.armor < 1400
+        equip apsbardiche
+      :
+        equip dmgbardiche
+  :
+    ?screen.i = 5 & u.loops % 2 = 1 & u.CanUse("voidweaver")
+      activate voidweaver
+    ?foe.distance > 7 & u.can_reload() & buffs.string ! "buff_range"
+      u.reload_all()
+    :?foe.distance > 5 & buffs.string ! "buff_range"
+      u.smoothcast(["shovel"])
+    :?foe ! boss
+      ?encounter.eliteMod = "false_god"
+        ?u.CanUse("heavy_hammer")
+          equip heavy_hammer
+          activate r 
+        :
+          equipR tower 
+          equipL unmaker1
+      :?encounter.eliteMod = "blessed"
+        equipR unmaker1
+        equipL unmaker2
+      :?foe.count = 1
+        ?buffs.string = "infernal"
+          equipR ice_moondial_crit_1
+          equipL ice_moondial_crit_2
+        :
+          u.moondial("ice_moondial_crit_1", "ice_moondial_crit_2")
+      :?foe.hp + foe.armor < 1360
+        equip apsbardiche
+      :
+        equip dmgbardiche
+    :
+      var s1
+      var s2
+      ?buffs.string = "lucky_mult"
+        s1 = "ice_moondial_elem_1"
+        s2 = "ice_moondial_elem_2"
+      :
+        s1 = "ice_moondial_crit_1"
+        s2 = "ice_moondial_crit_2"
+      ?foe = nagaraja & item.potion ! empty
+        activate potion
+      :?foe = nagaraja & u.CanUse("staff_poison") & armor*10+armor.f>80 & u.loops % 2 = 1
+        equip staff_hidden_poison
+        activate r
+      :?foe = nagaraja & foe.state = 112 & foe.time = 60 & u.CanUse("staff_stone")
+        equip staff_hidden_stone
+        activate r
+      :?buffs.string = "inf_speed"
+        equipR @s1@
+        equipL @s2@
+      :
+        u.moondial(s1, s2)
+        
+
+        
+
+    

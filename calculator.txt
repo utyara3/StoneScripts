@@ -1,0 +1,134 @@
+func UIButton(_ui, _x, _y, _w, _h, text, _func)
+  _ui.x = _x
+  _ui.y = _y 
+  _ui.w = _w
+  _ui.h = _h
+  
+  _ui.anchor = top_left
+  _ui.dock = top_left
+
+  _ui.text = text
+  _ui.SetPressed(_func)
+  
+  calc_base_panel.Add(_ui)
+
+  return _ui
+
+
+func Display(x, y, color, text)
+  >`@x@,@y@,#@color@,@text@
+
+var test_x = 15
+var test_y = 10
+
+var pressed = []
+
+var calc_base_panel
+
+var buttons = [
+  "7", "8", "9", "/",
+  "4", "5", "6", "*",
+  "1", "2", "3", "+",
+  "0", "<", "=", "-"
+]
+
+var all_ops = ["+", "-", "*", "/"]
+
+func calculate_string(equation)
+  var nums = []
+  var ops = []
+  var cur = ""
+  
+  for i = 0..string.Size(equation)-1
+    var c = string.Sub(equation, i, 1)
+    ?all_ops.Contains(c)
+      nums.Add(int.Parse(cur))
+      ops.Add(c)
+      cur = ""
+    :
+      cur = cur + c
+  nums.Add(int.Parse(cur))  
+  
+  var new_nums = [nums[0]] 
+  var new_ops = []
+  
+  for i = 0..ops.Count()-1
+    ?ops[i] = "*"
+      var last_idx = new_nums.Count() - 1
+      new_nums[last_idx] = new_nums[last_idx] * nums[i+1]
+    :?ops[i] = "/"
+      var last_idx = new_nums.Count() - 1
+      new_nums[last_idx] = new_nums[last_idx] / nums[i+1]
+    :
+      new_ops.Add(ops[i])
+      new_nums.Add(nums[i+1])
+  
+  var result = new_nums[0]
+  
+  ?new_nums.Count() > 1
+    for i = 0..new_ops.Count()-1
+      ?new_ops[i] = "+"
+        result = result + new_nums[i+1]
+      :
+        result = result - new_nums[i+1]
+  
+  return result + ""
+
+func handle_press(btn)
+  var text = btn.text
+
+  ?string.Size(GetTyped()) = 0 // проверяем чтобы первый был не знак
+    for op : all_ops
+      ?text = op
+        return
+
+  ?text = "="
+    var solved_eq = calculate_string(GetTyped())
+
+    pressed.Clear()
+    pressed.Add(solved_eq)
+    output.text = solved_eq
+  :?text = "C" // для того чтобы убрать все, но я урбал эту кнопку из за дизайна
+    pressed.Clear()
+    output.text = GetTyped()
+  :?text = "<"
+    pressed.RemoveAt(pressed.Count()-1)
+    output.text = GetTyped()
+  :
+    ButtonPressed(btn)
+
+func ButtonPressed(btn)
+  pressed.Add(btn.text)
+  output.text = GetTyped()
+
+func GetTyped()
+  return string.Join("", pressed)
+
+var output
+
+?loc.begin
+  calc_base_panel = ui.AddPanel()
+  calc_base_panel.w = 14
+  calc_base_panel.h = 12
+
+  var but_x = 0
+  var but_y = 0
+
+  for button : buttons
+    UIButton(ui.AddButton(), but_x * 3 + 1, but_y * 2 + 3, 3, 2, button, handle_press)
+
+    but_x++
+    
+    ?but_x % 4 = 0
+      but_x = 0
+      but_y++
+
+    output = ui.AddText()
+    output.anchor = top_left
+    output.dock = top_left
+    output.x = 1
+    output.y = 1
+
+    output.text = GetTyped()
+  
+    calc_base_panel.Add(output)

@@ -1,0 +1,104 @@
+/*
+GP COUNT
+trisk - 2
+hatchet - 1
+shovel - 1 
+dash - 1
+qstaff - 1
+aether talisman - 26
+---------------------
+total minimum - 32 gp
+remain = 118
+
+infernal +21 - 53
+after infernal - 65
+
+fire sword +21/1 - 60
+after sword - 5
+
+bardiche +21/3 - 
+
+*/
+
+var u = import utyara3/utils
+?u.loops = 2
+  loc.leave()
+
+u.updateAll()
+?loc.begin
+  brew stone + bronze
+?u.loops = 0 & totaltime < 3 
+  equipR compound
+  equipL trisk
+:?pos.x > 190 & foe.count < 1 & u.CanUse("staff_fire") & u.loops ! 0
+  equip staff_hidden_fire +21
+  activate r 
+:?summon.count = 0 & item.GetCooldown("quarterstaff") > 0
+  equipR aether talisman
+  equipL trisk
+  activate r
+:?u.loops = 0
+  ?!ai.enabled | ai.paused
+    u.maskound()
+  :?u.enduse > 20
+    equipR dash shiny
+    equipL trisk
+  :?foe.distance > 16 | foe.distance > 10 & !u.CanDash()
+    u.QuarterUse()
+    u.maskound()
+  :?foe.distance > 10
+    u.Dash()
+  :
+    ?item.CanActivate() & item.potion ! empty
+      activate potion
+    ?foe = boss & foe.armor < 1
+      equip dmgbard
+      activate r
+    :
+      equip fire crossbow +21/21
+:
+  ?foe.distance > 10
+    u.QuarterUse()
+    ?u.can_reload()
+      u.reload_all()
+    :
+      equipR dash shiny
+      equipL trisk
+  :
+    ?foe.distance > 6
+      ?u.can_reload()
+        u.reload_all()
+      :
+        u.smoothcast(["hatchet", "aether talisman"])
+    :
+      ?screen.i = 4
+        activate voidweaver
+      ?foe = boss & item.CanActivate()
+        activate potion
+      equipR fire sword +21/1 
+      equipL moon
+      /*
+      ?foe = boss & item.CanActivate() & item.potion ! empty
+        activate potion
+      */
+      /*
+      :
+        ?foe = boss
+          ?foe.armor > 140
+            equip bardiche +21/1
+          :?foe.armor <= 140 & foe.armor > 20
+            equip staff_hidden_fire
+          :?foe.armor <= 20 & foe.armor >= 13
+            equipR dash shiny
+            equipL aether talisman
+          :?foe.armor < 13
+            ?count > 0
+              //activate potion
+              equip bardiche +21/1
+            :
+              equipR dash shiny
+              equipL aether talisman
+              count++
+        :
+          equip bardiche +21/1
+        */

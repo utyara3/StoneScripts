@@ -1,0 +1,263 @@
+func Display(x, y, color, text)
+  >`@x@,@y@,#@color@,@text@
+
+var ranged = ["crossbow", "wand", "staff"]
+
+func is_any_item_in_ranged(items)
+  for item : items
+    for range : ranged
+      ?item = range
+        return true
+  return false
+
+func smoothcast(items)
+  var any_ranged = is_any_item_in_ranged(items)
+
+  ?any_ranged & player.MoveAddX < 15 | !any_ranged & item.left = trisk
+    ?items.Count() = 1
+      equip @items［0］@
+    :
+      equipR @items［0］@
+      equipL @items［1］@
+  :
+    equipR hatchet
+    equipL trisk
+
+var loops = 0
+
+var old_t = item.GetTreasureCount()
+var enduse = 0
+
+var delay = 30
+var moon = 0
+var moondialTimer = 0
+var swordtime = 0
+var moonmaulingTimer = 0
+var smoothcastTimer = 0
+var ListTimer = 0
+var awakedel = 30
+
+func BFG()
+  screen.next()
+  delay--
+  ?delay=0
+    equip blade
+    activate r
+    screen.ResetOffset()
+    delay = 30
+
+func DashBash()
+  ?item.GetCooldown(＂bash＂) <= 0
+    ?item.GetCooldown(＂dash＂) <= 0
+      ?foe.count >= 4 | (foe = boss & foe.buffs.string ! ＂mirror＂)
+        equipR bashing shield
+      :
+        equipR dashing shield shiny
+    :
+      ?foe.buffs.string ! ＂mirror＂
+        equipR bashing shield
+
+    equipL trisk
+  :
+    ?item.GetCooldown(＂dash＂) <= 0
+      equipR dashing shield shiny
+      equipL trisk
+      
+func Dash()
+  ?item.GetCooldown(＂dash＂) <= 0
+    equipR dashing shield shiny
+    equipL trisk
+
+func Bash()
+  ?item.GetCooldown(＂bash＂) <= 0
+    equipR bash
+    equipL trisk
+
+func CanDashBash()
+  ?item.GetCooldown(＂dash＂) <= 0 | 
+  ^item.GetCooldown(＂bash＂) <=0
+    return true
+  return false
+
+func CanDash()
+  ?item.GetCooldown(＂dash＂) <= 0
+      return true
+  return false
+
+func CanBash()
+  ?item.GetCooldown(＂bash＂) <= 0
+      return true
+  return false
+
+func OuroQuest()
+  ?item.left = ＂trisk＂ &
+  ^buffs.string ! ＂inf_speed＂
+    ?armor < maxarmor
+      equipL quest
+    :?foe.distance > 17
+      equipL ouro
+
+/*
+func moondial(item1, item2)
+  ?moondialTimer % 3 = 0
+    equipL moon
+    equipR @item1@
+  :?moondialTimer % 3 = 1
+    equipL moon
+    equipR @item2@
+  :
+    equipL @item2@
+    equipR @item1@
+  moondialTimer++
+*/
+
+func moonjuggling(s1, s2)
+    ?moon % 4 = 0
+      equipR @s2@
+      equipL @s1@
+    :?moon % 4 = 1
+      equipR moon
+      equipL @s1@
+    :?moon % 4 = 2
+      equipR @s2@
+      equipL @s1@
+    :
+      equipR @s2@
+      equipL moon
+    moon++
+
+func QuarterUse()
+  ?item.GetCooldown(＂quarterstaff＂)<1 &
+  ^item.CanActivate() & 
+  ^item.right ! ＂talisman＂ &
+  ^item.left ! ＂talisman＂
+    ?loc.stars < 11
+      equip quarterstaff shiny *0 +0
+    :
+      equip quarterstaff shiny *0
+    activate r
+
+
+func maskound()
+  ?armor >= 35
+    equipR mask
+  :
+    equipR compound
+  equipL trisk
+
+func RuneShield()
+  ?foe = poison
+    equipR ice shield A +21
+  :?foe = vigor
+    equipR poison shield A +21
+  :?foe = aether
+    equipR vigor shield A +21
+  :?foe = fire
+    equipR aether shield A +21
+  :?foe = ice
+    equipR fire shield A +21
+  equipL trisk
+
+func CanUse(item)
+  ?item.CanActivate() & 
+  ^(item.GetCooldown(item) <= 0 
+  ^| item.right = item
+  ^ & item.right.state = 2)
+    return true
+  return false
+
+func binSearchEnemy(min, max, foe_cnt)
+  ?min = max
+    return min
+  var mid = (min + max)/2
+  ?foe.GetCount(mid) < foe_cnt
+    return binSearchEnemy(mid + 1, max, foe_cnt)
+  :
+    return binSearchEnemy(min, mid, foe_cnt)
+
+func getFoeDistance(foe_cnt)
+  return binSearchEnemy(0, 42, foe_cnt)
+
+var stopped = 0
+
+func DisplayStopped()
+  >`0,15,#red,stopped: @stopped@
+
+var inf_t = 0
+func useInfernalPot()
+  var x = 0
+  var y = screen.h-1
+  draw.Bg(x, y, #red)
+  >`@x@,@y@,#red,█
+  ?inf_t < 2
+    inf_t += 1
+  :?inf_t = 2& draw.GetSymbol(x,y) = "█"
+    equip staff_hidden_fire
+    activate r
+    inf_t = 0
+
+
+var alternate = 0
+func alternation(items)
+  ?smooth_track［1］ % 2 = 0
+    ?alternate % 3 = 0
+      equipR @items[0]@
+      equipL moon
+    :?alternate % 3 = 1
+      equipR @items[1]@
+      equipL @items[0]@
+    :
+      equipR @items[0]@
+      equipL @items[1]@
+    alternate += 1
+  :
+    equipR hatchet
+    equipL triskelion
+
+
+func get_berserk_pot_duration()
+  ?buffs.string
+    for buff : string.Split(buffs.string, ",")
+      var info = string.Split(buff, ":")
+      ?info[1] = "berserk" & info[1] ! "buff_staff_berserk"
+        return int.Parse(info[3])
+
+  return 0
+
+var rec
+var infTime
+infTime = buffs.GetTime("buff_infernal")
+
+func infReduction()
+  ?!infTime
+    rec = 0
+  :?infTime
+    ?!rec
+      rec = infTime
+    :?(rec + 2 - infTime) % 60 = 0
+      equipL tri
+      equipR tower
+      return true 
+  return false 
+
+
+func updateAll()
+  ?loc.loop
+    loops++
+    old_t = item.GetTreasureCount()
+    enduse = 0
+    moondialTimer = 0
+    swordtime = 0
+    moon = 0
+    smoothcastTimer = 0
+    ListTimer = 0
+    stopped = 0
+
+  ?old_t ! item.GetTreasureCount()
+    enduse++
+
+  ?foe.distance > 7
+    ?moondialTimer ! 0
+      moondialTimer = 0
+ 
+  infTime = buffs.GetTime("buff_infernal")

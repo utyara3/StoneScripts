@@ -1,0 +1,25 @@
+var u = import utyara3/utils
+
+?loc.begin
+  brew stone + bronze
+
+?pickup.distance < 10
+  equipR star
+  equipL trisk
+:?foe.distance > 16 | foe.distance > 10 & !u.CanDashBash()
+  equipR compound
+  equipL trisk
+:?foe.distance > 10 
+  u.DashBash()
+:
+  ?foe ! boss
+    ?foe.distance > 6
+      u.smoothcast(["shovel"])
+    :
+      equipR unmaker1
+      equipL unmaker2
+  :
+    ?foe = poena & foe.state ! 1 & item.potion ! empty
+      activate potion
+    equipR aether sword +21/21 shiny
+    equipL aether sword +21/21 -shiny

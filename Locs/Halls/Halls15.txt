@@ -1,0 +1,231 @@
+var u = import utyara3/utils
+
+
+
+/* 
+8000 hp
+6 ice wand = (80 + 155) * 6 = 1410
+1 fire wand = 80 + 155 = 235
+1 poison wand = 80 + 155 = 235
+mask = (10 + 155) * 6 = 990
+heavy hammer = 145 + 155 = 300
+bardiche = 2498
+(1410 + 235 + 235 + 990 + 300 + 2498) * 1.3 = 
+FF2222 17 1141
+*/
+
+u.updateAll()
+var phase1killed = false
+var shoots = 9
+var hallsweaps = ［
+＂vigor crossbow shiny＂,
+＂vigor crossbow -shiny＂
+］
+?loc.loop
+  phase1killed = false
+  shoots = 9
+?foe = phase1 & foe.hp < 1 & u.loops % 2 = 1 & !phase1killed
+  phase1killed = true
+?loc.begin
+  brew wood + bronze
+?u.loops % 2 = 0 & screen.i = 4 & u.CanUse(＂blade＂)
+  u.BFG()
+:?u.loops = 0
+  ?totaltime < 3
+    equipR compound
+    equipL triskelion
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?item.potion ! empty & buffs.GetTime("berserk") < 300
+    activate potion
+  :?pickup.distance < 10
+    equipR mask
+    equipL star
+  :?!ai.enabled | ai.paused
+    equipR mask
+    equipL triskelion
+  :?foe.distance > 16 | !u.CanDashBash() & foe.distance > 10
+    u.QuarterUse()
+    equipR mask
+    equipL triskelion
+  :?foe.distance > 10
+    u.DashBash()
+  :
+    ?foe ! boss
+      equipR mask
+      equipL vigor wand -hidden +21
+    :
+      equip vigor crossbow
+:
+  ?phase1killed & u.loops % 2 = 1 & 
+  ^u.CanUse(＂bardiche＂) & foe.state ! 2
+    ?u.CanUse(＂wand_poison＂) & armor > 6
+      equipR wand_hidden_poison
+      activate r
+
+    :?u.CanUse(＂heavy_hammer＂)
+      equip heavy hammer
+      activate r
+
+    :?u.CanUse(＂mask＂)
+      equip mask
+      activate r
+    :?foe.distance > 11
+      ?u.CanUse(＂quarterstaff＂)
+        u.QuarterUse()
+    :?!u.CanUse(＂quarterstaff＂)
+      equip bardiche
+      activate r 
+    :
+      u.maskound()
+      /*
+  :?((u.enduse = 46 & u.loops % 2 = 0) |
+    ^(screen.i = 7 & u.loops % 2 = 1 &
+    ^foe.GetCount(24) < 1)) &
+    ^u.CanUse(＂staff_fire＂) & armor > 6
+      >`0,@screen.h-1@,#red,█
+      equip staff_hidden_fire
+      activate r
+      */
+  :?u.enduse >= 47 & u.loops % 2 = 0 & u.CanUse("staff_fire")
+    equip staff_hidden_fire
+    activate r
+  :?screen.i = 7 & u.loops % 2 = 1 & u.CanUse("staff_fire")
+    u.useInfernalPot()
+  :?summon.count = 0 & item.GetCooldown("quarterstaff") > 0 & screen.i = 0
+    equipR aether talisman
+    equipL triskelion
+    activate r
+  :?item.GetCooldown("voidweaver") > 0 & summon.GetId() ! "cinderwisp" & pickup.distance > 50 | 
+    ^item.right = fire talisman
+    equipR fire talisman
+    equipL triskelion
+    activate r
+  :?item.potion ! empty & buffs.GetTime("berserk") < 300
+    activate potion
+  :?!item.CanActivate() &
+  ^buffs.GetTime(＂berserk＂) < 300
+    equipR mask
+    equipL trisk
+
+  :?foe = phase1 & 
+  ^ item.GetCooldown(＂mind＂) > 0 & shoots > 0
+    ?shoots > 1
+      ?shoots > 7
+        equipR icewand1
+        equipL icewand2
+      :?shoots > 5
+        equipR icewand3
+        equipL icewand4
+      :?shoots > 3
+        equipR icewand5
+        equipL icewand6
+      :
+        equipR fire wand +21/21
+        equipL poison wand +21/21
+      shoots -= 2
+    :
+      equip vigor crossbow shiny
+      shoots--
+  :?screen.i = 7 & u.CanUse(＂wand_poison＂)
+    equipR wand hidden poison
+    equipL trisk
+    activate r
+  :?pickup.distance <= 10
+    equipR star
+    equipL trisk
+  :?foe.distance > 17
+    ?foe ! phase1
+      u.QuarterUse()
+    ?foe = phase1 & item.CanActivate() 
+      ?u.CanUse(＂staff_poison＂) & u.loops % 2 = 1 & armor*10+armor.f>80
+        equip staff_hidden_poison
+        activate r
+      :
+        u.smoothcast(["vigor crossbow"])
+    :?buffs.string = "inf_sp"
+      ?screen.i = 7
+        equipR ice shield ai *0 +0 shiny
+        equipL trisk
+      :?foe.distance > 25
+        u.maskound()
+      :
+        u.RuneShield()
+    :?r.can_reload()
+      r.reload_all()
+    :?foe.distance > 25 | foe = boss
+      u.maskound()
+      u.OuroQuest()
+    :?foe.distance > 21 | foe ! immune_to_physical & foe ! unpushable | pos.x + foe.distance  > 430
+      u.RuneShield()
+      ?item.left ! triskelion
+        equipL triskelion
+      :
+        equipL vigor hammer +21
+    :?foe = immune_to_physical | foe = unpushable
+      u.kb()
+  :?foe.distance >= 11
+    ?screen.i = 1 & u.loops % 2 = 1 & 
+    ^foe ! boss & u.CanDashBash()
+      ?u.CanDash()
+        u.Dash()
+      :?u.CanBash()
+        u.Bash()
+    :?u.CanDashBash()
+      u.DashBash()
+    :?buffs.GetTime(＂inf_speed＂) < 1 
+      ?r.can_reload()
+        r.reload_all()
+      :?screen.i < 7
+        u.kb()
+      :
+        u.RuneShield()
+    :
+      u.RuneShield()
+  :
+    ?foe ! boss
+      ?screen.i = 2 & u.loops % 2 = 1
+        activate voidweaver
+      ?foe.GetCount(16) < 5 & 
+      ^ (foe ! immune_to_phys &
+      ^ (foe ! unpushable |
+      ^ foe.distance > 5)) & screen.i < 7 &
+      ^ buffs.GetTime(＂inf_speed＂) < 1
+        u.kb()
+      :?screen.i = 1 & u.loops % 2 = 1 & 
+      ^u.CanUse(＂heavy_hammer＂)
+        equip heavy hammer
+        activate r
+      :?foe.distance > 7 & r.can_reload()
+        r.reload_all()
+      :?foe.distance > 4
+        u.smoothcast(
+        ^［＂vigor wand -hidden shiny＂,
+        ^＂vigor wand -hidden -shiny＂］)
+      :
+        equipR vigor wand -hidden shiny
+        equipL vigor wand -hidden -shiny
+    :
+      ?foe = phase1
+        ?foe.hp < 800 & u.CanUse("mind")
+        ^ & u.loops % 2 = 1
+          ?r.can_reload_ranged()
+            r.reload_ranged()
+          :
+            equip mind
+
+        :?foe.distance > 1 & u.CanUse("mind")
+          equipR aether talisman
+          equipL star
+
+        :?u.CanUse(＂mind＂)
+          ?shoots ! 8
+            shoots = 8
+          equip vigor crossbow
+        :
+          //equip @r.next_weapon(hallsweaps,1)［0］@
+          equip vigor crossbow -shiny
+      :
+        equip vigor crossbow

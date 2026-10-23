@@ -1,0 +1,66 @@
+var locs_data = [
+  [
+    "rocky", [
+      [3, phase1],
+      [4, phase2],
+      [20, phase3]
+    ]
+  ],
+  [
+    "deadwood", [
+      [5, phase1],
+      [20, phase2]
+    ]
+  ],
+  [
+    "caves", [
+      [20, phase1]
+    ]
+  ],
+  [
+    "mushroom", [
+      
+    ]
+  ],
+  [
+    "halls", [
+
+    ]
+  ],
+  [
+    "ridge", [
+
+    ]
+  ],
+  [
+    "temple", [
+
+    ]
+  ]
+
+]
+
+func get_loc_last_foe(req_loc, req_stars)
+  for loc_data : locs_data
+    ?req_loc = loc_data[0]
+      for foes_data : loc_data[1]
+        ?req_stars <= foes_data[0]
+          return foes_data[1]
+
+  return none
+
+var boss_time = 0
+var last_boss_foe = ""
+
+?loc.loop
+  boss_time = 0
+
+?loc.begin
+  last_boss_foe = get_loc_last_foe(loc, loc.stars)
+
+?foe = last_boss_foe & foe.hp < 1 & boss_time = 0
+  boss_time = totaltime
+
+?boss_time ! 0
+  >h-6,-1,Time: @time.FormatCasual(boss_time, true)@
+  >h-2,0,@boss_time@f
